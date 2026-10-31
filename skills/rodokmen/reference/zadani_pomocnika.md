@@ -47,6 +47,7 @@ PRAVIDLA:
 - Obrázek ke čtení zmenši na nejvýš 2000 px (větší se nezobrazí a „četl“ bys naslepo); na kandidáta si udělej výřez
   v plném rozlišení.
 - Nikdy nepiš údaj, který jsi na snímku neviděl. Nejisté čtení označ (?), nečitelné […].
+- 7ber/7bris = září, 8ber = říjen, 9ber = listopad, Xber = prosinec (ne 7. a 8. měsíc).
 - Když se ti obrázek nezobrazí (prázdný, „media removed“), zastav se a napiš, u kterého snímku.
 - Po KAŽDÉ osobě hned připiš výsledek do výstupního souboru (můžeš skončit předčasně – co je zapsané, neztratí se).
 - Každý snímek stahuj jednou; nad jedním archivem běží jen jedno stahování. Odpověď 503 / timeout =
