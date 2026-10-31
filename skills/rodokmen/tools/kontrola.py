@@ -121,7 +121,7 @@ def main():
         return False
     texty = [("ISSUES", i if isinstance(i, str) else " ".join(i)) for i in ns.get("ISSUES", [])]
     for k, p in P.items():
-        text = " ".join(p.get("f", [])) + " " + p.get("o", "") + " " + p.get("note", "")
+        text = " ".join(p.get("f", [])) + " " + p.get("note", "")
         roky = [int(y) for y in re.findall(r"\b1[5-9]\d\d|20\d\d\b", p.get("y", "") + " " + text)]
         texty.append((f"osoba {k}", text + (f" {hranice}" if roky and min(roky) >= 1870 or k < 8 else "")))
     texty += [(f"boční příbuzný {s.get('n')}", s.get("n", "") + " " + s.get("t", "")) for s in SIDE]

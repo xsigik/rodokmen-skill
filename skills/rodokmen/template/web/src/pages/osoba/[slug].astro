@@ -30,7 +30,6 @@ const path = [...p.path].reverse().filter(Boolean);
     <p class="note">V rodokmenu dvakrát – pedigree collapse: je předkem přes {p.children.map((c, i) => <>{i > 0 && ' i přes '}<PersonLink slug={c} /></>)}.
       Podruhé jako {p.also.map((a) => a.rel).join(', ')}.</p>
   )}
-  {p.about && p.about.split('\n\n').map((t) => <p class="about">{t}</p>)}
   {p.facts.length > 0 && <ul class="facts">{p.facts.map((f) => <li>{f}</li>)}</ul>}
   {p.note && <p class="note">{p.note}</p>}
 
