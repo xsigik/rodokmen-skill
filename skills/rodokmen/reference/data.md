@@ -56,8 +56,9 @@ P = {
 - `orientace` (nepovinné, jen pro tebe a pomocníky, web ho neukazuje): rozvržení knihy ověřené na snímku – přepočet
   snímek ↔ folio/pagina, oddíly po obcích nebo letech, kde je rejstřík a jak je řazený. Např. `"N 1884–1891 po obcích;
   Cheznovice fol. 290–338; snímek ≈ fol + 3; rejstřík na konci po písmenech, H = sn. 355–356, uvnitř po letech"`.
-  Je to jediné místo pravdy o rozvržení: doplňuj ho přes `zapis.py svazky <klíč> pracovni/x.json --sloucit`
-  (v `x.json` jen `{"orientace": "…"}`), deník na ně odkazuje. Nástroje `… svazek` ho při opakovaném zápisu nechají.
+  Je to jediné místo pravdy o rozvržení: svazek nejdřív zapiš nástrojem `… svazek` (vypíše klíč), pak doplň
+  `zapis.py svazky <klíč> pracovni/x.json --sloucit` (v `x.json` jen `{"orientace": "…"}`); deník na ně odkazuje.
+  Opakovaný `… svazek` orientaci nechá.
 
 ## `prepisy.json`
 `{"<klic>": {"orig": "[Datum] 14. února 1890\n[Dům] 112\n[Otec] …", "cs": "Český překlad celou větou…"}}`

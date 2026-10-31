@@ -6,10 +6,10 @@ končilo po 1–2 nálezech a pomocníka bylo nutné několikrát posílat „po
 ## Než zadání napíšeš (dělá hlavní model)
 - **Malá dávka:** 4–6 osob na pomocníka, jedna fara / jedna kniha / jeden archiv. Víc pomocníků nad jedním portálem
   ho přetíží – rozlož je mezi archivy.
-- **Orientaci v knize udělej sám:** vezmi ji z pole `orientace` svazku v `data/svazky.json`; když chybí, najdi knihu,
-  rejstřík a přepočet snímek ↔ folio (pagina), ověř ho na jednom snímku a zapiš do `orientace`. Pomocníkovi dej
-  **uzavřený seznam snímků**. Pomocník, který hledá, kde kniha začíná, spotřebuje většinu běhu na orientaci.
-  Pozor: „fol.“ v rejstříku bývá pagina.
+- **Orientaci v knize udělej sám:** najdi knihu, rejstřík a přepočet snímek ↔ folio (pagina), ověř ho na jednom
+  snímku a pomocníkovi dej **uzavřený seznam snímků**. Výchozí bod je pole `orientace` svazku v `data/svazky.json`;
+  co ověříš nově, doplň tam (svazek nejdřív zapiš nástrojem `… svazek`, ten vypíše klíč). Pomocník, který hledá,
+  kde kniha začíná, spotřebuje většinu běhu na orientaci. Pozor: „fol.“ v rejstříku bývá pagina.
 - **Kontrolní zápis:** vyber jeden zápis ze stejné knihy, který už máš doložený (osoba, datum, snímek). Pomocník ho
   musí najít jako první – tím ověříš, že čte správnou knihu a že mu snímky jdou.
 - **Model:** levnější pracovní model pomocníka (Claude Code: Sonnet; Codex a OMP viz `SKILL.md`, „Pomocníci“), ne ten
@@ -30,7 +30,8 @@ NÁSTROJ: <např. python3 -I tools/portafontium.py snimek <kniha> <snímek> <sou
          <technické pasti z reference/matriky.md: macOS zsh / Windows python -I -X utf8, magick>
 
 KNIHA: <archiv, signatura, druh (N/O/Z), roky, odkaz>
-SNÍMKY: <uzavřený seznam nebo rozsah, např. 28–41>; orientace: <pole orientace svazku, např. snímek ≈ fol + 3>
+SNÍMKY: <uzavřený seznam nebo rozsah, např. 28–41>; přepočet: <snímek ≈ (folio + 1)/2 − 5>
+        orientace: <oddíly, rejstřík – z pole orientace svazku>
 ROZPOČET: nejvýš <N ≤ 50> stažených snímků; v plném rozlišení jen ty, kde je kandidát.
 
 KONTROLNÍ ZÁPIS (najdi nejdřív): <jméno, datum, dům> na snímku <n>.
