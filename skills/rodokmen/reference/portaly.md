@@ -180,7 +180,8 @@ Adresy u nevyzkoušených portálů ověř při prvním použití (portály se m
 
 ## FamilySearch přes Claude in Chrome (slovenské a uherské matriky)
 Ověřený postup pro sbírku „Slovakia Church and Synagogue Books, 1592–1935“ a jiné uherské matriky v Chromu s rozšířením
-Claude in Chrome (OMP: `browser` v eval s `headed: true`, JavaScript na stránce přes `tab.run`; jinde Playwright).
+Claude in Chrome. OMP: `browser` v eval s `app: { relay: true }` ovládá uživatelův přihlášený Chrome jako Claude in Chrome
+(jinak `headed: true` a uživatel se v okně přihlásí sám); JavaScript na stránce přes `tab.evaluate(() => …)`. Jinde Playwright.
 **Předem, jednou:** uživatel je ve FamilySearch přihlášený a složku stahování v Chromu má nastavenou do projektu
 (`pracovni/familysearch/`) – na macOS Terminál do `~/Downloads` bez plného přístupu k disku nevidí.
 1. **Rejstřík napřed, listování až nakonec.** Hledej adresou
