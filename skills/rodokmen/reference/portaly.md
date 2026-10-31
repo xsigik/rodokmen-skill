@@ -82,6 +82,7 @@ Adresy u nevyzkoušených portálů ověř při prvním použití (portály se m
   id je v adrese `…/pages/ArchivaliePage/archivalieId/<id>`.
 - Starší snímky bývají z mikrofilmu nebo silně vybledlé – čti se zvýšeným kontrastem:
   `magick x.jpg -colorspace Gray -contrast-stretch 2%x30% x_k.jpg` (výřez pak dělej z kontrastní verze a poznamenej to v přepisu).
+  Silnější úprava je v `vyrez.py` a `overit.py` přepínačem `--vylepsit` (potřebuje ImageMagick 7).
 - Portál dává vždy celý snímek (nedlaždicuje); náhled a výřez dělá nástroj po stažení přes ImageMagick (`magick`).
   Denní údržba kolem 4:44 (asi 2 minuty).
 
@@ -131,7 +132,8 @@ Adresy u nevyzkoušených portálů ověř při prvním použití (portály se m
   („Sorry, you have been blocked“ – podle IP, i v běžném prohlížeči); když blokuje i mza.cz, ať uživatel vypne VPN
   nebo zkusí jinou síť.
 - Knihu najdi v prohlížeči podle obce nebo fary. Snímky jsou IIIF: adresu obrázku najdi v síťovém provozu a stáhni ji
-  přes `curl` (Python dostane HTTP 426). Dál podle „Ostatní portály“ níže.
+  přes `curl` (Python dostane HTTP 426). Na Windows vrací 426 i `curl` – snímky MZA pak jen v prohlížeči
+  (nebo ať snímek uloží uživatel). Dál podle „Ostatní portály“ níže.
 
 ## Pražské policejní přihlášky 1850–1914 (Národní archiv) – `tools/policie_prihlasky.py`
 - Karty pražských rodin: hlava rodiny, manželka s rokem a místem narození, děti s roky, adresy, někdy místo sňatku.
