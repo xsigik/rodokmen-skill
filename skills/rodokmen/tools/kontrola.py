@@ -5,7 +5,7 @@ Použití: kontrola.py
 Vypíše CHYBY (rozbijí web nebo jsou věcně špatně) a UPOZORNĚNÍ (něco chybí, doplnit).
 Návratový kód 1, pokud jsou chyby.
 """
-import datetime, json, os, re, sys
+import datetime, json, os, re, subprocess, sys
 for _s in (sys.stdout, sys.stderr):   # UTF-8 výstup i na Windows bez -X utf8 (cp1250 neumí třeba „→“)
     if hasattr(_s, "reconfigure"):
         _s.reconfigure(encoding="utf-8", errors="replace")
@@ -154,6 +154,14 @@ def main():
         if n >= 6:
             warn.append(f"rod {LINES[hlavni][0]} má už {n} generací – je čas napsat příběh rodu "
                         f"(data/pribeh.md, reference/pribehy.md); koncept nejdřív ukaž uživateli v chatu")
+
+    if not err:   # exportér potřebuje platná čísla osob, aliasy a odkazy na svazky
+        check = subprocess.run([sys.executable, "-I", "-X", "utf8", os.path.join(ROOT, "tools", "export_web.py"),
+                                "--kontrola-odkazu"], capture_output=True, text=True, encoding="utf-8")
+        if check.returncode:
+            err.append("kontrola odkazů selhala: " + (check.stderr or check.stdout).strip())
+        else:
+            warn.extend(json.loads(check.stdout))
 
     log = os.path.join(DATA, "research_log.md")
     rows = sum(1 for l in open(log, encoding="utf-8") if re.match(r"^\| \d+ \|", l)) if os.path.exists(log) else 0
