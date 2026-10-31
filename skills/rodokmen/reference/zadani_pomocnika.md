@@ -28,6 +28,8 @@ PROJEKT: <absolutní cesta ke kořeni projektu>
 VÝSTUP:  <absolutní cesta>/pracovni/pom_<větev>/vysledek.md   (piš jen sem)
 NÁSTROJ: <např. python3 -I tools/portafontium.py snimek <kniha> <snímek> <soubor> – spouštěj z kořene projektu>
          <technické pasti z reference/matriky.md: macOS zsh / Windows python -I -X utf8, magick>
+         <kniha bez rejstříku: procházej ji přes python3 -I tools/nahledy.py <pf|ebad|trebon> <kniha> <od> <do> [výřez sloupců],
+          zápis čti přes python3 -I tools/overit.py>
 
 KNIHA: <archiv, signatura, druh (N/O/Z), roky, odkaz>
 SNÍMKY: <uzavřený seznam nebo rozsah, např. 28–41>; přepočet: <snímek ≈ (folio + 1)/2 − 5>
