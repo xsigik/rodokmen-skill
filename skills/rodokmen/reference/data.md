@@ -53,6 +53,8 @@ P = {
 ## `svazky.json`
 `{"1a0b2337": {"archiv": "SOA Zámrsk – Sbírka matrik…", "portal": "ARON", "svazek": "N Holice 1880–1900, sign. …",
 "popis": "obce", "url": "odkaz na svazek", "orientace": "…"}}` – u ARON zapisuje `aron_img.py <apu> svazek`.
+- Rodinný doklad (rodný list, parte od rodiny): svazek bez `portal` a `url`, např. `{"archiv": "rodina Novákových",
+  "svazek": "rodné listy", "popis": ""}` – `kontrola.py` u něj odkaz na snímek nechce.
 - `orientace` (nepovinné, jen pro tebe a pomocníky, web ho neukazuje): rozvržení knihy ověřené na snímku – přepočet
   snímek ↔ folio/pagina, oddíly po obcích nebo letech, kde je rejstřík a jak je řazený. Např. `"N 1884–1891 po obcích;
   Cheznovice fol. 290–338; snímek ≈ fol + 3 (ověřeno fol. 290–338); rejstřík na konci po písmenech, H = sn. 355–356,
