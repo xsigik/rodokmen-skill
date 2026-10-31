@@ -16,6 +16,7 @@ končilo po 1–2 nálezech a pomocníka bylo nutné několikrát posílat „po
   nejlevnější. Nejlevnější model (Haiku) na listování knihou nestačí (v rejstříku řádky najde, v knize se ztratí
   v číslování listů); použij ho nejvýš na rejstřík. Kurent 18. a 1. poloviny 19. století a vybledlé snímky čte levnější
   model nespolehlivě – takovou knihu čti sám, nebo pomocníkovi dej přesný snímek. ARON a Porta fontium zvládá dobře.
+  Ovládání prohlížeče (FamilySearch) zvládne Sonnet s nízkým úsilím, Haiku ne.
 - **Nejvýš ~50 snímků na jeden běh.** Při stovkách obrázků pomocník část z nich přestane vidět („media removed“)
   a bez tabulky stavu snímků by to nepoznal. Delší knihu rozděl do dalších zadání.
 
@@ -30,6 +31,8 @@ NÁSTROJ: <např. python3 -I tools/portafontium.py snimek <kniha> <snímek> <sou
          <technické pasti z reference/matriky.md: macOS zsh / Windows python -I -X utf8, magick>
          <kniha bez rejstříku: procházej ji přes python3 -I tools/nahledy.py <pf|ebad|trebon> <kniha> <od> <do> [výřez sloupců],
           zápis čti přes python3 -I tools/overit.py>
+         <FamilySearch: postupuj přesně podle <SKILL_DIR>/reference/portaly.md, oddíl „FamilySearch přes Claude in Chrome“
+          – přečti si ho jako první; stažený JPG z pracovni/familysearch/ hned přejmenuj a přesuň do pracovni/pom_<větev>/>
 
 KNIHA: <archiv, signatura, druh (N/O/Z), roky, odkaz>
 SNÍMKY: <uzavřený seznam nebo rozsah, např. 28–41>; přepočet: <snímek ≈ (folio + 1)/2 − 5>

@@ -15,7 +15,7 @@ Matriky jsou online u osmi státních archivů – podle toho, **kde předci ži
 | Národní archiv | židovské matriky (HBMa), soupisy; pražské policejní přihlášky 1850–1914 | badatelna.eu; digi.nacr.cz/prihlasky2 | přihlášky **ano – `policie_prihlasky.py`** |
 
 Adresy u nevyzkoušených portálů ověř při prvním použití (portály se mění). Pro pohraničí a mimo ČR viz `playbook.md` §2
-(Matricula pro Rakousko/Německo, Geneteka pro Polsko, FamilySearch pro Slovensko) a níže.
+(Matricula pro Rakousko/Německo, Geneteka pro Polsko, FamilySearch pro Slovensko a Uhry) a níže.
 
 ## ARON (SOA Zámrsk) – hotové nástroje
 - **Hledání svazků:** `python3 -I tools/aron_search.py "Holice"` → řádky `apu_id | signatura, roky | druh, obce`.
@@ -166,7 +166,8 @@ Adresy u nevyzkoušených portálů ověř při prvním použití (portály se m
 
 ## FamilySearch (přes uživatelův přihlášený prohlížeč)
 - Přihlášení je potřeba i na hledání v indexech. České matriky tam skoro zindexované nejsou (Slovensko ano, hlavně křty).
-- Jen když ho má uživatel otevřený a sám nabídne. Z kontextu stránky lze volat JSON API
+- U českých předků jen doplněk – když ho má uživatel otevřený a sám nabídne. Pro slovenské a uherské matriky je to
+  hlavní zdroj: postup v prohlížeči je v dalším oddílu. Z kontextu stránky lze volat JSON API
   `https://www.familysearch.org/service/search/hr/v2/personas?q.surname=…&q.givenName=…&q.fatherGivenName=…&count=20`
   (`fetch(…, {credentials:'include'})`); výsledky v `entries[].content.gedcomx`.
 - Užitečné na indexy matrik a hroby (BillionGraves, Find a Grave). Výsledek je vodítko – ověř v matrice.
@@ -176,6 +177,31 @@ Adresy u nevyzkoušených portálů ověř při prvním použití (portály se m
   (`images[]` = ARK). Snímek: `https://www.familysearch.org/service/records/storage/deepzoomcloud/dz/v1/<ARK 3:1:…>/$dist`
   (plné rozlišení), malé náhledy `…/image_files/8/0_0.jpg`. **Po ~1000 rychlých požadavcích přijde HTTP 429** a blokace
   na desítky minut – stahuj jen konkrétní snímky, nanejvýš pár za sekundu, hromadné procházení knih nedělej.
+
+## FamilySearch přes Claude in Chrome (slovenské a uherské matriky)
+Ověřený postup pro sbírku „Slovakia Church and Synagogue Books, 1592–1935“ a jiné uherské matriky v uživatelově
+přihlášeném Chromu s rozšířením Claude in Chrome (v OMP stejně přes `browser` v eval s `headed: true`, JavaScript na
+stránce přes `tab.run`; jinde Playwright). Drž se ho – zkoušení pokus–omyl stojí hodně kreditů.
+1. **Rejstřík napřed, listování až nakonec.** Hledej adresou
+   `https://www.familysearch.org/search/record/results?q.surname=…&q.givenName=…&q.birthLikePlace=…&q.birthLikeDate.from=…&q.birthLikeDate.to=…&count=100`
+   (podle potřeby i `q.fatherGivenName`, `q.spouseSurname`, `q.marriageLikePlace`). Z detailu záznamu vede odkaz
+   „Zobrazit původní dokument“ rovnou na správný snímek. Křty i sňatky bývají zindexované i tam, kde to nečekáš –
+   zkus hledání s přesnou shodou i bez ní. Úmrtí po ~1852 často zindexovaná nejsou, tam se listuje (body 3–4).
+2. **Výsledky čti levně** – JavaScriptem z řádků tabulky (`javascript_tool`), ne ze snímků obrazovky:
+   `[...document.querySelectorAll('tr')].map(r => [r.innerText.replace(/\s+/g, ' ').trim(), r.querySelector('a[href*="1:1:"]')?.href]).filter(r => r[1])`
+   → jméno, událost, datum, rodiče a odkaz na záznam (`…/1:1:…`).
+3. **Katalog** (kniha bez indexu): místo hledej v uherské podobě („Turzovka, Trencsén, Maďarsko“). Film otevřeš adresou
+   `https://www.familysearch.org/search/film/<číslo DGS>`, číslo doplněné nulami zleva na 9 číslic (`004567890`).
+4. **Prohlížeč snímků:** parametr `?i=N` v adrese snímek **nemění**. Na číslo snímku skoč polem „Snímek“ vlevo nahoře
+   (trojklik, napsat číslo, Enter, počkat ~5 s); šipky po stranách = další / předchozí snímek. Výchozí zobrazení ukáže jen
+   horní část dvoustrany – zavři spodní panel a dej „přizpůsobit“.
+5. **Stažení:** ikona stažení v liště prohlížeče → v dialogu **„Pouze JPG“** (výchozí je PDF se zvýrazněním) → Stáhnout.
+   Soubor se jmenuje podle ark-id nebo `image.jpg` – hned ho přejmenuj (DGS a číslo snímku v názvu). Složku stahování
+   v Chromu ať si uživatel jednou nastaví do projektu (`pracovni/familysearch/`); na macOS Terminál do `~/Downloads`
+   bez plného přístupu k disku nevidí. Do zápisu si poznamenej číslo DGS a číslo snímku.
+6. **Pomocníci:** hledání a listování v prohlížeči zvládne Sonnet s nízkým úsilím, když dostane přesně tento postup
+   (do zadání dej odkaz na tento oddíl, neopisuj ho); Haiku na ovládání prohlížeče nestačí. Prohlížeč má najednou jen
+   jeden pomocník. Zápis ze staženého JPG v plném rozlišení čte a do dat zapisuje hlavní model.
 
 ## Hroby a hřbitovy
 - Kde jsou předci pohřbeni, víš z rozhovoru s rodinou (Fáze 1). Fotky náhrobků (jména, data, rodná příjmení) jsou
