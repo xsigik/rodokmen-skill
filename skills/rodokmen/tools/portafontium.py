@@ -196,7 +196,8 @@ def svazek(kniha):
     d = json.load(open(path, encoding="utf-8")) if os.path.exists(path) else {}
     sig = fields.get("Signatura", kniha)
     popis = "; ".join(x for x in (fields.get("Místo", ""), fields.get("Text desky", "")) if x)
-    d[f"pf_{kniha}"] = {"archiv": "SOA Plzeň – Sbírka matrik západních Čech", "portal": "Porta fontium",
+    d[f"pf_{kniha}"] = {**d.get(f"pf_{kniha}", {}),   # ruční pole (orientace) zůstanou
+                        "archiv": "SOA Plzeň – Sbírka matrik západních Čech", "portal": "Porta fontium",
                         "svazek": f"{sig}, {fields.get('Typ', '')}".strip(", "), "popis": popis[:300],
                         "snimku": len(scans), "url": f"{BASE}/register/{ARCHIV}/{kniha}"}
     with open(path, "w", encoding="utf-8", newline="\n") as f:

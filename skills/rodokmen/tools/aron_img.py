@@ -133,9 +133,10 @@ if __name__ == "__main__":
         path = os.path.join(root, "data", "svazky.json")
         sv = json.load(open(path, encoding="utf-8")) if os.path.exists(path) else {}
         fond, _, rest = vol["name"].partition(": ")
-        sv[apu[:8]] = dict(archiv=fond if rest else "", portal="ARON", svazek=rest or vol["name"],
-                           popis=(vol.get("description") or "")[:300], snimku=len(tiles),
-                           url=f"https://aron.vychodoceskearchivy.cz/apu/{vol['id']}")
+        sv[apu[:8]] = {**sv.get(apu[:8], {}), **dict(   # ruční pole (orientace) zůstanou
+            archiv=fond if rest else "", portal="ARON", svazek=rest or vol["name"],
+            popis=(vol.get("description") or "")[:300], snimku=len(tiles),
+            url=f"https://aron.vychodoceskearchivy.cz/apu/{vol['id']}")}
         with open(path, "w", encoding="utf-8", newline="\n") as f:
             json.dump(sv, f, ensure_ascii=False, indent=1)
         print(apu[:8], "->", sv[apu[:8]]["svazek"])
