@@ -13,6 +13,7 @@ const p = people[Astro.params.slug];
 const line = p.line ? lineByK[p.line] : null;
 const recs = [...new Set(p.records)].filter((r) => records[r]).sort((a, b) => dateKey(records[a].date) - dateKey(records[b].date));
 const path = [...p.path].reverse().filter(Boolean);
+const doplnky = Object.values(import.meta.glob('../../local/osoba/*.astro', { eager: true })).map((m) => m.default);   // vlastní doplňky projektu (reference/web.md)
 ---
 <Base title={p.name} description={`${p.name} ${p.years} – ${p.rel}`}>
   <div class="crumbs">
@@ -30,6 +31,7 @@ const path = [...p.path].reverse().filter(Boolean);
     <p class="note">V rodokmenu dvakrát – pedigree collapse: je předkem přes {p.children.map((c, i) => <>{i > 0 && ' i přes '}<PersonLink slug={c} /></>)}.
       Podruhé jako {p.also.map((a) => a.rel).join(', ')}.</p>
   )}
+  {doplnky.map((Doplnek) => <Doplnek p={p} />)}
   {p.facts.length > 0 && <ul class="facts">{p.facts.map((f) => <li>{f}</li>)}</ul>}
   {p.note && <p class="note">{p.note}</p>}
 

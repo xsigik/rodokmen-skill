@@ -65,6 +65,24 @@ Další aktualizace = jen `npm run nasadit`. Vlastní doménu lze nastavit v adm
 
 **Pozor:** „Netlify Drop“ (přetažení složky v prohlížeči) neumí Edge Functions → web by byl bez přihlášení. Nepoužívat.
 
+## Vlastní doplňky stránky osoby (bez zásahu do skillu)
+Chce-li uživatel k osobám něco, co skill nezná (např. čtivý text, rodinná anekdota), **neupravuj `tools/` ani soubory
+ze šablony webu** – aktualizace skillu je přepíše. Použij dva rozšiřující body:
+1. **Pole osoby v `data/osoby.py`:** jakékoli jméno pole mimo `n y st f r note sex` (např. `o="text"`) projde na web jako
+   `p.extra.<pole>`; textová pole hlídá i `kontrola.py` (citlivá slova).
+2. **Komponenta v `web/src/local/osoba/*.astro`:** každý takový soubor se vloží na stránku osoby nad fakta a dostane `p`.
+   Soubory v `web/src/local/` aktualizace nezná, a tedy je nepřepíše ani nesmaže.
+
+Příklad – čtivý text o osobě (`o="Odstavec 1.\n\nOdstavec 2."`), soubor `web/src/local/osoba/o.astro`:
+```astro
+---
+const { p } = Astro.props;
+const odstavce = String(p.extra?.o ?? '').split('\n\n').filter(Boolean);
+---
+{odstavce.map((t) => <p class="about">{t}</p>)}
+<style>.about { font-size: 1.05rem; line-height: 1.6; max-width: 46rem; }</style>
+```
+
 ## Náhled v Claude desktop
 Projekt má `.claude/launch.json` – náhled webu v Claude desktop spustí `npm --prefix web run dev` (port 4321). Data se
 předtím musí vyexportovat (`cd web && npm run data`). Když náhled nenaběhne (třeba na Windows, kde je `npm` jako `npm.cmd`),

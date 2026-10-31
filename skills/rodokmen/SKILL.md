@@ -192,7 +192,8 @@ Podrobně `reference/pribehy.md`. Tohle je to, co rodina na webu čte nejradši,
   Je hlavní věcí na úvodní stránce webu.
 
 ## Fáze 4 – Web
-Podrobně `reference/web.md`. Ve zkratce:
+Podrobně `reference/web.md`. **Vlastní přání k webu a k polím osob (např. čtivý text o osobě) řeš jen přes rozšiřující body
+(`reference/web.md`, „Vlastní doplňky“), nikdy úpravou `tools/` ani souborů šablony `web/` – aktualizace skillu je přepíše.** Ve zkratce:
 1. `cd web && npm install` (jednou), pak `npm run nahled` → http://localhost:4321 – ukaž uživateli. V cloudovém prostředí
    (claude.ai) localhost neuvidí – pošli mu snímky stránek (headless prohlížeč) nebo nasaď náhled.
 2. Nastav `data/web.json`: název, úvod, kontakt a **přihlašovací otázku a odpověď** (web je jen pro rodinu).
@@ -248,7 +249,7 @@ Nedělej to pořád. Postup:
 | `vyrezy/`, `zdroje/` | výřezy zápisů a dokumentů (web / plné rozlišení), název = klíč + `.jpg` |
 | `dokumenty/`, `pracovni/` | originály od rodiny; pracovní soubory (nejdou na web) |
 | `poznamky_pro_skill.md` | poznámky pro správce skillu (chyby, nové archivy, nápady) – posílá je uživatel ručně |
-| `tools/` | nástroje (kopie ze skillu; aktualizace celého projektu: znovu spustit `novy_projekt.py` na stejnou složku, viz `reference/web.md`) |
+| `tools/` | nástroje (kopie ze skillu, **needitovat** – aktualizace je přepíše; vlastní věci patří do `web/src/local/`; aktualizace celého projektu: znovu spustit `novy_projekt.py` na stejnou složku, viz `reference/web.md`) |
 | `web/` | web (Astro); data do něj jdou jen přes `npm run data` |
 
 ## Nástroje (`tools/`, spouštět z kořene projektu `python3 -I tools/<nástroj>`)
