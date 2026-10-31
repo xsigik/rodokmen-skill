@@ -61,8 +61,11 @@ def main():
             r = subprocess.run(cmd, capture_output=True, text=True)
             if celý and os.path.exists(cmd[-1]):
                 x0, y0, x1, y1 = (float(v) for v in vyrez.split(","))
-                subprocess.run([MAGICK, cmd[-1], "-crop", f"{(x1-x0)*100}%x{(y1-y0)*100}%+%[fx:w*{x0}]+%[fx:h*{y0}]",
-                                "+repage", out], check=True)
+                w, h = (int(v) for v in subprocess.run([MAGICK, cmd[-1] + "[0]", "-format", "%w %h", "info:"],
+                                                        capture_output=True, text=True, check=True).stdout.split())
+                # pixely, ne %[fx:] v geometrii – to ImageMagick 6 (convert) neumí
+                subprocess.run([MAGICK, cmd[-1], "-crop", f"{round((x1 - x0) * w)}x{round((y1 - y0) * h)}"
+                                f"+{round(x0 * w)}+{round(y0 * h)}", "+repage", out], check=True)
             if r.returncode or not os.path.exists(out):
                 print(f"snímek {n}: nestaženo ({(r.stderr or r.stdout).strip()[:150]})")
                 continue
