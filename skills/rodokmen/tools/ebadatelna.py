@@ -348,7 +348,7 @@ def zapis_svazek(klic, zaznam):
     if os.path.exists(path):
         with open(path, encoding="utf-8") as f:
             d = json.load(f)
-    d[klic] = zaznam
+    d[klic] = {**d.get(klic, {}), **zaznam}   # ruční pole (orientace) zůstanou
     with open(path, "w", encoding="utf-8", newline="\n") as f:
         json.dump(d, f, ensure_ascii=False, indent=1)
     print(f"{klic} -> {zaznam['svazek']}")
