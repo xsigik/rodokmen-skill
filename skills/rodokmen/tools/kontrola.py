@@ -74,7 +74,9 @@ def main():
             err.append(f"zápis {k}: svazek '{z['svazek']}' není v data/svazky.json")
         if z.get("ukazka"):   # vymyšlený zápis ukázkové rodiny – nemá snímek ani přepis
             continue
-        if not z.get("odkaz") and not svazky.get(z.get("svazek", ""), {}).get("url"):
+        sv = svazky.get(z.get("svazek", ""))
+        rodinny = sv is not None and not sv.get("portal")   # rodinný doklad (svazek bez portálu) odkaz na snímek nemá
+        if not z.get("odkaz") and not (sv or {}).get("url") and not rodinny:
             warn.append(f"zápis {k}: chybí odkaz na snímek (pole 'odkaz')")
         if not os.path.exists(os.path.join(ROOT, "vyrezy", k + ".jpg")):
             warn.append(f"zápis {k}: chybí výřez vyrezy/{k}.jpg")
@@ -85,7 +87,10 @@ def main():
         if k not in cited:
             warn.append(f"zápis {k}: necituje ho žádná osoba (doplnit do 'r' u osoby nebo bočního příbuzného)")
 
-    for name, e in jload("mista.json", {}).items():
+    mista = jload("mista.json", {})
+    if not mista and len(P) > 1:
+        warn.append("data/mista.json je prázdný – mapa na webu bude prázdná (tools/mista.py pridej \"Obec\")")
+    for name, e in mista.items():
         if "lat" not in e:
             warn.append(f"místo {name}: nemá souřadnice (spusťte tools/mista.py)")
         try:
@@ -97,7 +102,13 @@ def main():
     if not (cfg.get("prihlaseni") or {}).get("odpoved") and not (cfg.get("prihlaseni") or {}).get("otevreny"):
         warn.append("web.json: není nastavená odpověď na přihlašovací otázku – nasazení webu skončí chybou")
 
-    if re.search(r"Novák|Petrovi", json.dumps(cfg, ensure_ascii=False)) and "Novák" not in P.get(1, {}).get("n", ""):
+    # zbytky ukázky: věty, které jsou jen v ukázce, kontakt „Petrovi“, nebo Novák v textech, když žádná osoba Novák není
+    # (skuteční Novákovi se tak nehlásí); ukázkový projekt sám (zápisy „ukazka“) se nehlásí
+    texty = json.dumps(cfg, ensure_ascii=False)
+    ukazka = (re.search(r"Ukázka – vymyšlená rodina|ukázka – odpověď|Holicích čp\. 112|Kučerovi mleli ve Slatiňanech", texty)
+              or (cfg.get("kontakt") or {}).get("jmeno") == "Petrovi"
+              or ("Novák" in texty and not any("Novák" in p.get("n", "") for p in P.values())))
+    if ukazka and not any(z.get("ukazka") for z in zaz):
         warn.append("web.json: jsou v něm ještě ukázkové texty (Novákovi) – nastav název, příběh a kontakt")
 
     # Citlivé věci, které jdou na web: ISSUES („Co hledáme“), poznámky a fakta osob, boční příbuzní, texty.

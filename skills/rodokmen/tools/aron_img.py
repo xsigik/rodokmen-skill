@@ -4,7 +4,7 @@
 Použití:
   aron_img.py <apu_id> <snimek> [uroven] [vystup.jpg] [x0,y0,x1,y1]
       uroven: 0 = plné rozlišení, 1 = polovina (výchozí), 2 = čtvrtina
-      x0,y0,x1,y1: jen výřez (zlomky 0..1 celé stránky) – stahují se jen potřebné dlaždice
+      x0,y0,x1,y1: jen výřez (zlomky 0..1 celé stránky) – stahují se jen potřebné dlaždice, výstup je přesně oblast
   aron_img.py <apu_id> info          -> název svazku a počet snímků
   aron_img.py <apu_id> link <n>      -> trvalý odkaz na snímek n v prohlížeči ARON (pole "odkaz" v zaznamy.json)
   aron_img.py <apu_id> svazek        -> zapíše svazek do data/svazky.json (klíč = prvních 8 znaků apu_id)
@@ -114,7 +114,10 @@ def fetch_image(dzi_url, level_offset=1, out="page.jpg", crop=None):
                 args += ["(", p, "-crop", f"{cw}x{ch}+{ox}+{oy}", "+repage", ")"]
             row_files.append(os.path.join(tmp, f"row_{r}.miff"))   # MIFF zachová vlastnosti JPEG (podvzorkování barev)
             subprocess.run(args + ["+append", row_files[-1]], check=True)
-        subprocess.run([MAGICK, *row_files, "-append", "-quality", "88", out], check=True)
+        # dlaždice pokryjí víc než oblast – oříznout přesně na zlomky (souřadnice pak sedí jako u vyrez.py)
+        orez = ["-crop", f"{round((x1 - x0) * w)}x{round((y1 - y0) * h)}+{round(x0 * w) - c0 * ts}+{round(y0 * h) - r0 * ts}",
+                "+repage"] if crop else []
+        subprocess.run([MAGICK, *row_files, "-append", *orez, "-quality", "88", out], check=True)
     finally:
         shutil.rmtree(tmp, ignore_errors=True)   # uklidit i při chybě stahování nebo magick
     return out, (W, H)
