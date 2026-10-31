@@ -13,8 +13,8 @@ Použití (z kořene projektu):
 Vytvoří pracovni/nahledy/<kniha>_<od>-<do>_<i>.jpg (každá dlaždice má v rohu číslo snímku) a vypíše cesty.
 Stažené snímky se ukládají do pracovni/nahledy/snimky/ a znovu se nestahují.
 """
-import os, subprocess, sys
-for _s in (sys.stdout, sys.stderr):
+import glob, os, shutil, subprocess, sys
+for _s in (sys.stdout, sys.stderr):   # UTF-8 výstup i na Windows bez -X utf8 (cp1250 neumí třeba „→“)
     if hasattr(_s, "reconfigure"):
         _s.reconfigure(encoding="utf-8", errors="replace")
 
@@ -22,6 +22,16 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 NASTROJ = {"pf": "portafontium.py", "ebad": "ebadatelna.py", "trebon": "trebon.py"}
 FONT = next((f for f in ("/System/Library/Fonts/Supplemental/Arial.ttf", r"C:\Windows\Fonts\arial.ttf",
                          "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf") if os.path.exists(f)), None)
+
+
+def magick():
+    """Cesta k ImageMagicku; když chybí, skončí hned (před stahováním) srozumitelnou hláškou."""
+    m = (shutil.which("magick") or next(iter(sorted(glob.glob(r"C:\Program Files\ImageMagick*\magick.exe"))), None)
+         or (os.name != "nt" and shutil.which("convert")))   # ImageMagick 6 bez magick; na Windows je convert.exe jiný program
+    if not m:
+        sys.exit("Chybí ImageMagick (příkaz magick). Nainstaluj ho (macOS: brew install imagemagick, "
+                 "Windows: winget install ImageMagick.ImageMagick a restart Claude Code / Codexu / OMP) a spusť nástroj znovu.")
+    return m
 
 
 def main():
@@ -36,6 +46,7 @@ def main():
     portal, kniha, od, do = a[0], a[1], int(a[2]), int(a[3])
     vyrez = a[4] if len(a) > 4 else None
     po, sirka = volby.get("--po", 3), volby.get("--sirka", 950)
+    MAGICK = magick()
     sdir = os.path.join(ROOT, "pracovni", "nahledy", "snimky")
     os.makedirs(sdir, exist_ok=True)
     dlazdice = []
@@ -50,14 +61,14 @@ def main():
             r = subprocess.run(cmd, capture_output=True, text=True)
             if celý and os.path.exists(cmd[-1]):
                 x0, y0, x1, y1 = (float(v) for v in vyrez.split(","))
-                subprocess.run(["magick", cmd[-1], "-crop", f"{(x1-x0)*100}%x{(y1-y0)*100}%+%[fx:w*{x0}]+%[fx:h*{y0}]",
+                subprocess.run([MAGICK, cmd[-1], "-crop", f"{(x1-x0)*100}%x{(y1-y0)*100}%+%[fx:w*{x0}]+%[fx:h*{y0}]",
                                 "+repage", out], check=True)
             if r.returncode or not os.path.exists(out):
                 print(f"snímek {n}: nestaženo ({(r.stderr or r.stdout).strip()[:150]})")
                 continue
         tile = out[:-4] + f"_t{sirka}.jpg"
         if not os.path.exists(tile):
-            cmd = ["magick", out, "-resize", f"{sirka}x", "-gravity", "northwest", "-fill", "red",
+            cmd = [MAGICK, out, "-resize", f"{sirka}x", "-gravity", "northwest", "-fill", "red",
                    "-undercolor", "white", "-pointsize", "42"]
             cmd += (["-font", FONT] if FONT else []) + ["-annotate", "+8+8", f"sn. {n}", tile]
             subprocess.run(cmd, check=True)
@@ -66,7 +77,7 @@ def main():
     for i in range(0, len(dlazdice), po):
         cast = dlazdice[i:i + po]
         out = os.path.join(ndir, f"{kniha}_{od}-{do}_{i // po + 1}.jpg")
-        subprocess.run(["magick", *cast, "+append", "-quality", "85", out], check=True)
+        subprocess.run([MAGICK, *cast, "+append", "-quality", "85", out], check=True)
         print(out)
 
 
