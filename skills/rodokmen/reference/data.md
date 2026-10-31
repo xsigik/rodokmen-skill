@@ -55,7 +55,9 @@ P = {
 "popis": "obce", "url": "odkaz na svazek", "orientace": "…"}}` – u ARON zapisuje `aron_img.py <apu> svazek`.
 - `orientace` (nepovinné, jen pro tebe a pomocníky, web ho neukazuje): rozvržení knihy ověřené na snímku – přepočet
   snímek ↔ folio/pagina, oddíly po obcích nebo letech, kde je rejstřík a jak je řazený. Např. `"N 1884–1891 po obcích;
-  Cheznovice fol. 290–338; snímek ≈ fol + 3; rejstřík na konci po písmenech, H = sn. 355–356, uvnitř po letech"`.
+  Cheznovice fol. 290–338; snímek ≈ fol + 3 (ověřeno fol. 290–338); rejstřík na konci po písmenech, H = sn. 355–356,
+  uvnitř po letech"`. Posun snímek ↔ folio se v knize mění (`reference/matriky.md`, bod 3) – každý zapiš s rozsahem,
+  kde jsi ho ověřil.
   Je to jediné místo pravdy o rozvržení: svazek nejdřív zapiš nástrojem `… svazek` (vypíše klíč), pak doplň
   `zapis.py svazky <klíč> pracovni/x.json --sloucit` (v `x.json` jen `{"orientace": "…"}`); deník na ně odkazuje.
   Opakovaný `… svazek` orientaci nechá.
