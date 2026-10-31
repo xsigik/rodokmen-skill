@@ -5,7 +5,8 @@ Použití:
   vyrez.py <snimek.jpg> <klic> [x0,y0,x1,y1] [--vylepsit]
       x0..y1 = oblast zápisu jako zlomky šířky a výšky stránky (0..1); bez nich se bere celá stránka.
       Uloží zdroje/<klic>.jpg (plné rozlišení) a vyrezy/<klic>.jpg (zmenšeno na max. 1800 px pro web).
-      --vylepsit = vybledlý snímek: šedá, místní kontrast, doostření (potřebuje ImageMagick 7).
+      --vylepsit = vybledlý snímek: šedá, místní kontrast, doostření – jen ve vyrezy/, zdroje/ zůstane věrný originál
+      (potřebuje ImageMagick 7.0.8 / 6.9.10 nebo novější); v přepisu to poznamenej.
 
 Výřez dělejte velkoryse: celý zápis včetně hlavičky sloupců, okrajových poznámek a podpisů.
 Potřebuje ImageMagick (příkaz `magick`).
@@ -51,10 +52,9 @@ def main():
         w, h = (int(v) for v in subprocess.run([MAGICK, src + "[0]", "-auto-orient", "-format", "%w %h", "info:"],
                                                 capture_output=True, text=True, check=True).stdout.split())
         cmd += ["-crop", f"{round((x1 - x0) * w)}x{round((y1 - y0) * h)}+{round(x0 * w)}+{round(y0 * h)}", "+repage"]
-    if "--vylepsit" in sys.argv:
-        cmd += VYLEPSIT
     subprocess.run(cmd + ["+profile", "!icc,*", "+set", "comment", "-quality", "90", full], check=True)
-    subprocess.run([MAGICK, full, "-resize", "1800x1800>", "-quality", "85", small], check=True)
+    vylepsit = VYLEPSIT if "--vylepsit" in sys.argv else []   # jen web; zdroje/ zůstane věrná kopie snímku
+    subprocess.run([MAGICK, full, *vylepsit, "-resize", "1800x1800>", "-quality", "85", small], check=True)
     print("uloženo:", full, "a", small)
 
 

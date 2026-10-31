@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # Ověření čtení (např. po pomocníkovi): výřez zápisu rozdělený na dvě poloviny nejvýš 1900 px. Použití: overit.py <snímek.jpg> x0,y0,x1,y1 <prefix> [v] [--vylepsit]
-# (v = dělit vodorovně; --vylepsit = vybledlý snímek: šedá, místní kontrast, doostření; potřebuje ImageMagick 7)
+# (v = dělit vodorovně; --vylepsit = vybledlý snímek: šedá, místní kontrast, doostření; ImageMagick 7.0.8 / 6.9.10 nebo novější)
 import glob,os,shutil,sys,subprocess
 for _s in (sys.stdout, sys.stderr):   # UTF-8 výstup i na Windows bez -X utf8 (cp1250 neumí třeba „→“)
     if hasattr(_s, "reconfigure"):

@@ -102,9 +102,13 @@ def main():
     if not (cfg.get("prihlaseni") or {}).get("odpoved") and not (cfg.get("prihlaseni") or {}).get("otevreny"):
         warn.append("web.json: není nastavená odpověď na přihlašovací otázku – nasazení webu skončí chybou")
 
-    # ukázkové texty poznáme podle vět, které jsou jen v ukázce (skuteční Novákovi je mít nebudou)
-    ukazka = r"Ukázka – vymyšlená rodina|ukázka – odpověď|Holicích čp\. 112|Kučerovi mleli ve Slatiňanech"
-    if re.search(ukazka, json.dumps(cfg, ensure_ascii=False)) and not any(z.get("ukazka") for z in zaz):
+    # zbytky ukázky: věty, které jsou jen v ukázce, kontakt „Petrovi“, nebo Novák v textech, když žádná osoba Novák není
+    # (skuteční Novákovi se tak nehlásí); ukázkový projekt sám (zápisy „ukazka“) se nehlásí
+    texty = json.dumps(cfg, ensure_ascii=False)
+    ukazka = (re.search(r"Ukázka – vymyšlená rodina|ukázka – odpověď|Holicích čp\. 112|Kučerovi mleli ve Slatiňanech", texty)
+              or (cfg.get("kontakt") or {}).get("jmeno") == "Petrovi"
+              or ("Novák" in texty and not any("Novák" in p.get("n", "") for p in P.values())))
+    if ukazka and not any(z.get("ukazka") for z in zaz):
         warn.append("web.json: jsou v něm ještě ukázkové texty (Novákovi) – nastav název, příběh a kontakt")
 
     # Citlivé věci, které jdou na web: ISSUES („Co hledáme“), poznámky a fakta osob, boční příbuzní, texty.
