@@ -32,6 +32,11 @@ Styl: nadpis `## Krátký a zvědavý`, 2–5 vět, konkrétní data a místa, o
 Nejlepší 2–4 dej i na úvod webu (`web.json` → `zajimavosti_na_uvodu`).
 Citlivé věci z 20. století (sebevraždy, nemoci, rozvody, nemanželské děti u nedávno žijících) piš jen se souhlasem
 uživatele (`reference/soukromi.md`). `kontrola.py` je hlídá.
+Po úpravě textů nebo roku narození spusť `python3 -I tools/kontrola.py`: z aktuálních dat ověří odkazy
+v `zajimavosti.md`, `pribeh.md`, veřejných textech `web.json` a hypotézách. U slov „…babička/dědeček/bába/děd“
+přímo před odkazem na osobu upozorní i na počet „pra“ podle Kekulého čísla. Počítá z pohledu výchozí osoby;
+je-li text z jiného pohledu, upozornění posuď podle kontextu. Nic automaticky nepřepisuje ani negeneruje web.
+
 
 ## Příběh hlavního rodu
 **Hlavní rod** je rod výchozí osoby (rodné příjmení, většinou rod č. 8 v `LINES`). Když uživatel chce jiný, nastav

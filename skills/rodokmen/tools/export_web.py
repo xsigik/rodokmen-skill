@@ -7,6 +7,8 @@ web/src/data/site.json, web/src/generated/*, web/public/{img,zdroje}, web/public
 web/nginx.conf a web/netlify/edge-functions/brana.js.
 
 Spouští se z web/ příkazem `npm run data` (nebo přímo `python3 -I tools/export_web.py`, na Windows `python -I -X utf8 …`).
+Suchá kontrola: `python3 -I tools/export_web.py --kontrola-odkazu` vypíše JSON seznam upozornění;
+spočítá aktuální adresy z dat, ale nic nezapisuje ani nespouští generování vějíře.
 """
 import hashlib, html, json, os, re, shutil, subprocess, sys, unicodedata
 for _s in (sys.stdout, sys.stderr):   # UTF-8 výstup i na Windows bez -X utf8 (cp1250 neumí třeba „→“)
@@ -183,6 +185,37 @@ def login_files(cfg):
     return bool(answer)
 
 
+def link_warnings(texts, targets, slugs):
+    """Stejná kontrola pro export i kontrola.py; příbuzenství se posuzuje vůči výchozí osobě."""
+    warnings = []
+    broken = [(name, m.group(0)) for name, text in texts.items()
+              for m in re.finditer(r"/(osoba|zdroj|rod|rodina)/([^/\s)\"'#?<>\]]+)", text)
+              if m.group(2) not in targets[m.group(1)]]
+    for name, link in dict.fromkeys(broken):
+        warnings.append(f"nefunkční odkaz {link}/ v {name} – oprav ho (adresy vycházejí z aktuálních dat)")
+
+    numbers = {}
+    for k, slug in slugs.items():
+        numbers.setdefault(slug, []).append(k)
+    ancestor_link = re.compile(
+        r"\b(?P<word>(?P<pra>(?:pra)*)(?:babi(?:čk(?:a|y|u|ou|o)|čce)|"
+        r"dědeč(?:ek|ka|ku|kovi|kem)|báb(?:a|y|ě|u|ou|o)|děd(?:a|u|ovi|em|e)?))"
+        r"\s+\[[^\]\n]+\]\(/osoba/(?P<slug>[^/\s)#?]+)/?(?:[?#][^)\s]*)?\)", re.I)
+    for name, text in texts.items():
+        for m in ancestor_link.finditer(text):
+            ks = numbers.get(m.group("slug"), [])
+            if not ks:
+                continue   # neplatný odkaz už je ohlášený výše
+            degree = len(m.group("pra")) // 3
+            if any(gen(k) >= 2 and degree == gen(k) - 2 for k in ks):
+                continue
+            expected = " / ".join(dict.fromkeys(relation(k) for k in ks))
+            warnings.append(f"{name}: „{m.group('word')}“ před /osoba/{m.group('slug')}/ "
+                            f"neodpovídá číslu {', '.join(map(str, ks))} ({expected}); "
+                            "posouzeno z pohledu výchozí osoby, text může mít jiný pohled")
+    return warnings
+
+
 def main():
     ns = load_people()
     P, LINES, SIDE, ISSUES = ns["P"], ns["LINES"], ns["SIDE"], ns["ISSUES"]
@@ -336,6 +369,19 @@ def main():
                 docs=[dict(img=d["img"], caption=d["popis"], people=[slugs[k] for k in d.get("osoby", []) if k in slugs])
                       for d in docs_cfg if os.path.exists(os.path.join(VYREZY, d["img"] + ".jpg"))])
 
+    # Číst zdrojové texty, ne starý site.json ani soubory z předchozího exportu.
+    texts = {}
+    for name in ("pribeh.md", "zajimavosti.md"):
+        path = os.path.join(DATA, name)
+        text = open(path, encoding="utf-8").read() if os.path.exists(path) else ""
+        texts[name] = strip_comments(re.sub(r"^# .*\n", "", text, count=1) if name == "zajimavosti.md" else text)
+    texts["web.json"] = json.dumps(public_cfg, ensure_ascii=False)
+    texts["osoby.py (hypotézy)"] = json.dumps(hypotheses, ensure_ascii=False)
+    warnings = link_warnings(texts, dict(osoba=people, zdroj=recs, rod=lines, rodina=families), slugs)
+    if "--kontrola-odkazu" in sys.argv:
+        print(json.dumps(warnings, ensure_ascii=False))
+        return
+
     write(os.path.join(WEB, "src", "data", "site.json"), json.dumps(site, ensure_ascii=False, indent=1))
     gen_dir = os.path.join(WEB, "src", "generated")
     for src, dst in (("archivni_dotazy.md", "dotazy.md"), ("research_log.md", "denik.md"), ("zajimavosti.md", "zajimavosti.md")):
@@ -376,15 +422,8 @@ def main():
     print(f"{len(people)} osob, {len(families)} rodin, {len(records)} zápisů, {len(lines)} rodů, {len(places)} míst; "
           f"zkopírováno {copied} obrázků; přihlášení {'zapnuté' if gated else 'VYPNUTÉ (web je otevřený)'}")
 
-    # odkazy v textech, které nikam nevedou (adresa osoby se změní třeba doplněním roku narození: jan-novak → jan-novak-1798)
-    targets = dict(osoba=people, zdroj=recs, rod=lines, rodina=families)
-    texts = {f: open(os.path.join(gen_dir, f), encoding="utf-8").read() for f in ("pribeh.md", "zajimavosti.md")}
-    texts["web.json"] = json.dumps(cfg, ensure_ascii=False)
-    texts["osoby.py (hypotézy)"] = json.dumps(hypotheses, ensure_ascii=False)
-    broken = [(f, m.group(0)) for f, t in texts.items()
-              for m in re.finditer(r"/(osoba|zdroj|rod|rodina)/([^/\s)\"'#?<>\]]+)", t) if m.group(2) not in targets[m.group(1)]]
-    for f, link in dict.fromkeys(broken):
-        print(f"POZOR: nefunkční odkaz {link}/ v {f} – oprav ho (adresy stránek jsou ve web/src/data/site.json)")
+    for warning in warnings:
+        print("POZOR:", warning)
 
 
 if __name__ == "__main__":

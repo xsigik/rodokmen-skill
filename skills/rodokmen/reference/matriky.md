@@ -105,6 +105,7 @@ Mladší knihy jsou na matričním úřadě obce s rozšířenou působností / 
 | `unk` | známe jen místo v rodokmenu |
 
 ## Typické pasti (ze skutečného výzkumu)
+- 7ber/7bris = září, 8ber = říjen, 9ber = listopad, Xber = prosinec (ne 7. a 8. měsíc).
 - Písař spletl jméno dědečka (Josef místo Václava) – rozhodne více zápisů téže rodiny.
 - Dítě zapsané pod jiným křestním jménem, než jakým ho volala rodina (Františka → v rodině Anna).
 - Sňatek pár měsíců před porodem nebo po něm – není chyba, jen „svatba na poslední chvíli“; zajímavost pro web.
