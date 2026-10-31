@@ -179,29 +179,26 @@ Adresy u nevyzkoušených portálů ověř při prvním použití (portály se m
   na desítky minut – stahuj jen konkrétní snímky, nanejvýš pár za sekundu, hromadné procházení knih nedělej.
 
 ## FamilySearch přes Claude in Chrome (slovenské a uherské matriky)
-Ověřený postup pro sbírku „Slovakia Church and Synagogue Books, 1592–1935“ a jiné uherské matriky v uživatelově
-přihlášeném Chromu s rozšířením Claude in Chrome (v OMP stejně přes `browser` v eval s `headed: true`, JavaScript na
-stránce přes `tab.run`; jinde Playwright). Drž se ho – zkoušení pokus–omyl stojí hodně kreditů.
+Ověřený postup pro sbírku „Slovakia Church and Synagogue Books, 1592–1935“ a jiné uherské matriky v Chromu s rozšířením
+Claude in Chrome (OMP: `browser` v eval s `headed: true`, JavaScript na stránce přes `tab.run`; jinde Playwright).
+**Předem, jednou:** uživatel je ve FamilySearch přihlášený a složku stahování v Chromu má nastavenou do projektu
+(`pracovni/familysearch/`) – na macOS Terminál do `~/Downloads` bez plného přístupu k disku nevidí.
 1. **Rejstřík napřed, listování až nakonec.** Hledej adresou
    `https://www.familysearch.org/search/record/results?q.surname=…&q.givenName=…&q.birthLikePlace=…&q.birthLikeDate.from=…&q.birthLikeDate.to=…&count=100`
-   (podle potřeby i `q.fatherGivenName`, `q.spouseSurname`, `q.marriageLikePlace`). Z detailu záznamu vede odkaz
-   „Zobrazit původní dokument“ rovnou na správný snímek. Křty i sňatky bývají zindexované i tam, kde to nečekáš –
-   zkus hledání s přesnou shodou i bez ní. Úmrtí po ~1852 často zindexovaná nejsou, tam se listuje (body 3–4).
-2. **Výsledky čti levně** – JavaScriptem z řádků tabulky (`javascript_tool`), ne ze snímků obrazovky:
+   (podle potřeby i `q.fatherGivenName`, `q.spouseSurname`, `q.marriageLikePlace`), s přesnou shodou i bez ní – křty
+   i sňatky bývají zindexované i tam, kde to nečekáš. Odkaz „Zobrazit původní dokument“ v detailu záznamu vede rovnou
+   na snímek (dál bod 4). Ke katalogu (bod 3) přejdi, až obě hledání nic nenajdou – typicky úmrtí po ~1852.
+2. **Výsledky čti levně:** JavaScriptem z řádků tabulky (`javascript_tool`) místo snímků obrazovky:
    `[...document.querySelectorAll('tr')].map(r => [r.innerText.replace(/\s+/g, ' ').trim(), r.querySelector('a[href*="1:1:"]')?.href]).filter(r => r[1])`
    → jméno, událost, datum, rodiče a odkaz na záznam (`…/1:1:…`).
-3. **Katalog** (kniha bez indexu): místo hledej v uherské podobě („Turzovka, Trencsén, Maďarsko“). Film otevřeš adresou
+3. **Katalog:** místo hledej v uherské podobě („Turzovka, Trencsén, Maďarsko“). Film otevřeš adresou
    `https://www.familysearch.org/search/film/<číslo DGS>`, číslo doplněné nulami zleva na 9 číslic (`004567890`).
-4. **Prohlížeč snímků:** parametr `?i=N` v adrese snímek **nemění**. Na číslo snímku skoč polem „Snímek“ vlevo nahoře
-   (trojklik, napsat číslo, Enter, počkat ~5 s); šipky po stranách = další / předchozí snímek. Výchozí zobrazení ukáže jen
-   horní část dvoustrany – zavři spodní panel a dej „přizpůsobit“.
-5. **Stažení:** ikona stažení v liště prohlížeče → v dialogu **„Pouze JPG“** (výchozí je PDF se zvýrazněním) → Stáhnout.
-   Soubor se jmenuje podle ark-id nebo `image.jpg` – hned ho přejmenuj (DGS a číslo snímku v názvu). Složku stahování
-   v Chromu ať si uživatel jednou nastaví do projektu (`pracovni/familysearch/`); na macOS Terminál do `~/Downloads`
-   bez plného přístupu k disku nevidí. Do zápisu si poznamenej číslo DGS a číslo snímku.
-6. **Pomocníci:** hledání a listování v prohlížeči zvládne Sonnet s nízkým úsilím, když dostane přesně tento postup
-   (do zadání dej odkaz na tento oddíl, neopisuj ho); Haiku na ovládání prohlížeče nestačí. Prohlížeč má najednou jen
-   jeden pomocník. Zápis ze staženého JPG v plném rozlišení čte a do dat zapisuje hlavní model.
+4. **Prohlížeč snímků:** po otevření zavři spodní panel a dej „přizpůsobit“ (jinak vidíš jen horní část dvoustrany).
+   Na snímek skoč polem „Snímek“ vlevo nahoře: trojklik, číslo, Enter a počkej, až se snímek načte (~5 s). Šipky po
+   stranách = další / předchozí. Parametr `?i=N` v adrese snímek nezmění.
+5. **Stažení:** ikona stažení v liště prohlížeče → **„Pouze JPG“** (výchozí je PDF se zvýrazněním) → Stáhnout. Soubor
+   (ark-id nebo `image.jpg`) hned přejmenuj na `<DGS>_<snímek>.jpg`; obě čísla patří i do zápisu.
+6. **Čtení:** zápis čti ze staženého JPG v plném rozlišení.
 
 ## Hroby a hřbitovy
 - Kde jsou předci pohřbeni, víš z rozhovoru s rodinou (Fáze 1). Fotky náhrobků (jména, data, rodná příjmení) jsou

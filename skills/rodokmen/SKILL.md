@@ -119,9 +119,8 @@ Základní smyčka pro každou osobu:
    zapiš do `data/archivni_dotazy.md` a jdi dál.
 3. **Najdi svazek**: podle obce → farnost → archiv. ARON: `python3 -I tools/aron_search.py "Obec"`, SOA Třeboň:
    `tools/trebon.py`, SOA Plzeň: `tools/portafontium.py`, SOA Praha (střední Čechy): `tools/ebadatelna.py`,
-   Praha: `tools/ahmp_search.sh`; ostatní a Rakousko viz `reference/portaly.md`. Slovenské a uherské matriky jsou
-   na FamilySearch – v prohlížeči podle `reference/portaly.md`, „FamilySearch přes Claude in Chrome“.
-   Sňatek hledej nejdřív ve farnosti nevěsty.
+   Praha: `tools/ahmp_search.sh`; ostatní a Rakousko viz `reference/portaly.md`. Slovenské a uherské matriky: FamilySearch
+   podle `reference/portaly.md`, „FamilySearch přes Claude in Chrome“. Sňatek hledej nejdřív ve farnosti nevěsty.
    Je-li ke svazku index (rejstřík), začni jím. Starší matriky (před ~1784) bývají ve faře sousedního města.
 4. **Stáhni snímek** do `pracovni/<svazek>/` a nech ho tam – před dalším stažením se podívej, jestli ho už nemáš
    (šetří čas, archiv i CAPTCHY). Najdi zápis, **přečti ho sám ze snímku** (přiblíž si výřez v plném rozlišení).
@@ -171,9 +170,6 @@ Ať zmíní i zjevně související výskyty (viz krok 6 výše). Výstupy pomoc
 na dvě čitelné poloviny), než ho zapíšeš jako `doc`. Uživateli to vysvětli správně: pomocníci nečtou hůř, je to stejný
 model. Jde o princip čtyř očí a pomocník nemá kontext (dvě rodiny stejného jména ve vsi, dva Janové na statku).
 Prohlížeč může mít najednou jen jeden pomocník, proto dávej přednost nástrojům bez prohlížeče.
-**FamilySearch** (slovenské a uherské matriky): do zadání dej odkaz na oddíl „FamilySearch přes Claude in Chrome“
-v `reference/portaly.md` s plnou cestou ke `SKILL_DIR`, postup neopisuj. Hledání a listování v prohlížeči tak zvládne
-Sonnet s nízkým úsilím; Haiku na ovládání prohlížeče nestačí.
 **Pomocníky spouštěj na levnějším modelu** (Claude Code: Agent s `model: "sonnet"`; Codex: `spawn_agent` s `model`
 na levnější model z jeho nabídky; OMP: model pomocníka volbou neurčíš – pomocníci běží jako agent `task` a levnější
 model mu nastaví uživatel v `/agents`, nabídni mu to): hledání a první čtení zvládnou a stojí zlomek
