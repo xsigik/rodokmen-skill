@@ -53,6 +53,20 @@ def year_of(p, sym):
     return None
 
 
+def exact_death_year(p):
+    """Rok jen z přesného † data nebo roku, ne z odhadu či intervalu."""
+    for fact in p.get("f", []):
+        m = re.match(rf"^\s*†\s*(?:{DATE}|(\d{{4}}))(?=$|[\s,;(])", fact)
+        if not m or re.match(r"\s*(?:[-–—/?]|až\b|nebo\b|\(\?\))", fact[m.end():]):
+            continue
+        if m.group(4):
+            return int(m.group(4))
+        try:
+            return datetime.date(int(m.group(3)), int(m.group(2)), int(m.group(1))).year
+        except ValueError:
+            continue
+
+
 def line_of(k):
     while k > 15:
         k //= 2
@@ -110,7 +124,7 @@ def main():
             cb = event(P[k // 2], "*")
             if cb and 0 <= (deaths[0][0] - cb[0][0]).days <= 60:
                 ideas["Matka zemřela krátce po porodu"].append(f"{name(k)} zemřela {(deaths[0][0] - cb[0][0]).days} dní po narození {name(k // 2)}")
-        dy = year_of(p, "†")
+        dy = exact_death_year(p)
         if dy in EPIDEMIE:
             ideas["Úmrtí v roce epidemie / války"].append(f"{name(k)} † {dy} – {EPIDEMIE[dy]}? (ověř příčinu v zápisu)")
         if b and b.month == 12 and b.day in (24, 25):
