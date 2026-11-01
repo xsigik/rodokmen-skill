@@ -31,7 +31,7 @@ NÁSTROJ: <např. python3 -I tools/portafontium.py snimek <kniha> <snímek> <sou
          <technické pasti z reference/matriky.md: macOS zsh / Windows python -I -X utf8, magick>
          <kniha bez rejstříku: procházej ji přes python3 -I tools/nahledy.py <pf|ebad|trebon> <kniha> <od> <do> [výřez sloupců],
           zápis čti přes python3 -I tools/overit.py>
-         <FamilySearch: přečti si nejdřív <SKILL_DIR>/reference/portaly.md, oddíl „FamilySearch přes Claude in Chrome“,
+         <FamilySearch: přečti si nejdřív <SKILL_DIR>/reference/portaly.md, oddíl „FamilySearch v Chromu uživatele“,
           a postupuj podle něj; stažené JPG přesouvej z pracovni/familysearch/ do pracovni/pom_<větev>/>
 
 KNIHA: <archiv, signatura, druh (N/O/Z), roky, odkaz>

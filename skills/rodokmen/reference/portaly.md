@@ -156,7 +156,7 @@ Adresy u nevyzkoušených portálů ověř při prvním použití (portály se m
   včetně evangelických sborů a u řady zápisů odkaz na sken (dotaz viz Polsko – Geneteka). Archivní skeny:
   szukajwarchiwach.gov.pl (Archiwum Państwowe w Katowicach).
 - **Slovenská strana** (Kysuce: Čadca, Svrčinovec, Čierne, Skalité, Turzovka): uherské matriky na FamilySearch – oddíl
-  „FamilySearch přes Claude in Chrome“.
+  „FamilySearch v Chromu uživatele“.
 - **1939–1945** (neověřeno): muži z Těšínska často s Deutsche Volksliste a ve Wehrmachtu. Stopy jsou v poválečných
   spisech o vrácení československého občanství a u mimořádných lidových soudů (ZA Opava, fondy Okresní úřad Těšín,
   Landrát Těšín, ONV) a v agendě DVL v archivu v Katovicích (szukajwarchiwach, německý i polský název obce
@@ -213,17 +213,21 @@ Adresy u nevyzkoušených portálů ověř při prvním použití (portály se m
   (plné rozlišení), malé náhledy `…/image_files/8/0_0.jpg`. **Po ~1000 rychlých požadavcích přijde HTTP 429** a blokace
   na desítky minut – stahuj jen konkrétní snímky, nanejvýš pár za sekundu, hromadné procházení knih nedělej.
 
-## FamilySearch přes Claude in Chrome (slovenské a uherské matriky)
-Ověřený postup pro sbírku „Slovakia Church and Synagogue Books, 1592–1935“ a jiné uherské matriky v Chromu s rozšířením
-Claude in Chrome. OMP: `browser` v eval s `app: { relay: true }` ovládá uživatelův přihlášený Chrome jako Claude in Chrome
-(jinak `headed: true` a uživatel se v okně přihlásí sám); JavaScript na stránce přes `tab.evaluate(() => …)`. Jinde Playwright.
-**Předem, jednou:** uživatel je ve FamilySearch přihlášený a složku stahování v Chromu má nastavenou do projektu
-(`pracovni/familysearch/`) – na macOS Terminál do `~/Downloads` bez plného přístupu k disku nevidí.
+## FamilySearch v Chromu uživatele (slovenské a uherské matriky)
+Ověřený postup pro sbírku „Slovakia Church and Synagogue Books, 1592–1935“ a jiné uherské matriky v uživatelově
+skutečném Chromu: s rozšířením Claude in Chrome (body 1–6), v OMP přes relay (oddíl níže). Automatizovaný prohlížeč
+(chrome-devtools MCP, Playwright, OMP bez relay) i dotazy mimo prohlížeč (curl, i na veřejný katalog) dostanou „Access
+Denied – Error 15“ a každý pokus se zapisuje k IP uživatele – nezkoušej je. Bez takového Chromu hledá uživatel sám
+a posílá snímky obrazovky.
+**Předem, jednou (Claude in Chrome):** uživatel je ve FamilySearch přihlášený a složku stahování v Chromu má nastavenou
+do projektu (`pracovni/familysearch/`) – na macOS Terminál do `~/Downloads` bez plného přístupu k disku nevidí.
 1. **Rejstřík napřed, listování až nakonec.** Hledej adresou
    `https://www.familysearch.org/search/record/results?q.surname=…&q.givenName=…&q.birthLikePlace=…&q.birthLikeDate.from=…&q.birthLikeDate.to=…&count=100`
    (podle potřeby i `q.fatherGivenName`, `q.spouseSurname`, `q.marriageLikePlace`), s přesnou shodou i bez ní – křty
    i sňatky bývají zindexované i tam, kde to nečekáš. Odkaz „Zobrazit původní dokument“ v detailu záznamu vede rovnou
    na snímek (dál bod 4). Ke katalogu (bod 3) přejdi, až obě hledání nic nenajdou – typicky úmrtí po ~1852.
+   Index slovenských křtů uvádí jako místo jen faru („Raková, Čadca“), obec a dům jsou až na snímku:
+   `q.birthLikePlace=<obec>` vrátí celou faru i cizí podobné záznamy – výsledky filtruj podle příjmení a fary.
 2. **Výsledky čti levně:** JavaScriptem z řádků tabulky (`javascript_tool`) místo snímků obrazovky:
    `[...document.querySelectorAll('tr')].map(r => [r.innerText.replace(/\s+/g, ' ').trim(), r.querySelector('a[href*="1:1:"]')?.href]).filter(r => r[1])`
    → jméno, událost, datum, rodiče a odkaz na záznam (`…/1:1:…`).
@@ -235,6 +239,19 @@ Claude in Chrome. OMP: `browser` v eval s `app: { relay: true }` ovládá uživa
 5. **Stažení:** ikona stažení v liště prohlížeče → **„Pouze JPG“** (výchozí je PDF se zvýrazněním) → Stáhnout. Soubor
    (ark-id nebo `image.jpg`) hned přejmenuj na `<DGS>_<snímek>.jpg`; obě čísla patří i do zápisu.
 6. **Čtení:** zápis čti ze staženého JPG v plném rozlišení.
+
+**OMP (`browser` přes relay)** – místo klikání v bodech 1–5 přes JSON API (oddíl výše):
+- **Předem, jednou:** uživatel je ve FamilySearch přihlášený a má rozšíření relay – `omp browser-relay install`, pak
+  v Chromu `chrome://extensions` → Režim pro vývojáře → Načíst rozbalené → `~/.omp/browser-relay/extension`. Bez něj
+  `app: { relay: true }` skončí „extension never connected“.
+- Kartu otevři s `app: { relay: true }, persist: true` rovnou na JSON adrese
+  `https://www.familysearch.org/service/search/hr/v2/personas?q.surname=…&count=100&offset=…` (parametry jako v bodě 1).
+  Běžné stránky FamilySearch Chrome po pár sekundách odpojí (`target_closed`). Čti
+  `tab.evaluate(() => (document.querySelector('pre') || document.body).textContent)` a parsuj JSON.
+- Snímek: `entries[].content.gedcomx.sourceDescriptions[].about` záznamu (`ark:/61903/3:1:…`) → v kartě
+  `fetch('https://www.familysearch.org/service/records/storage/deepzoomcloud/dz/v1/<3:1:…>/$dist', {credentials: 'include'})`
+  → base64 → `Bun.write` do `pracovni/familysearch/` s ark v názvu (dvojtečky nahraď pomlčkou; číslo DGS v indexu bývá
+  prázdné). Prohlížeč snímků ani složka Stažené nejsou potřeba; limit HTTP 429 platí (oddíl výše).
 
 ## Hroby a hřbitovy
 - Kde jsou předci pohřbeni, víš z rozhovoru s rodinou (Fáze 1). Fotky náhrobků (jména, data, rodná příjmení) jsou
