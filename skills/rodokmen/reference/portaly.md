@@ -66,6 +66,22 @@ Adresy u nevyzkoušených portálů ověř při prvním použití (portály se m
   požadavkem (IIIF), `nahled` = 1/4. Číslo snímku = pořadí náhledu v prohlížeči; soubory nesou číslo folia
   (`dolni-bela-17_0951` = fol. 95), takže u knih se souvislou foliací je **snímek ≈ folio**.
 - `link <kniha> <snímek>` → trvalý odkaz, `svazek <kniha>` → `svazky.json` (klíč `pf_<kniha>`).
+- **Okresní civilní matriky** (lidé bez vyznání a civilní sňatky; většinou 1920–1949, některé knihy od 70. let 19. století;
+  okresní úřady Aš, Cheb, Domažlice, Klatovy, Karlovy Vary, Plzeň, Tachov a další): `portafontium.py fara
+  okresni-urad/domazlice` → knihy jako u fary; dál `info`, `snimek`, `svazek`. Evangelické a jiné sbory stejně:
+  `fara cirkev-evangelicka/as` (neznámý název → nástroj vypíše možnosti; skupiny jsou na `…/contents/register`).
+- **Standesamt 1938–1945** (civilní matriky pohraničí za německé správy – všichni obyvatelé, nejen bez vyznání; okresy
+  Aš, Cheb, Karlovy Vary, Sokolov, Tachov, Domažlice, Klatovy a další): `fara standesamt/okres-cheb/cheb`
+  (úřady okresu vypíše `fara standesamt/okres-cheb/x`).
+- **Sčítání lidu 1857–1921 po domech** – dům ze zápisu v matrice → celá domácnost se jmény, daty a místy narození,
+  v desetiletých krocích. Rok 1921 je ve 28 soudních okresech (Domažlicko, Klatovsko, Plzeňsko, Rokycansko, Tachovsko,
+  Kralovicko…), starší roky v méně z nich; Chebsko a Karlovarsko chybí.
+  1. `portafontium.py scitani "Obec" [rok]` (výchozí 1921; najde i německý název) → `id | obec | počet domů | okres`.
+     Bez nálezu vypiš okresy: `scitani`; obce okresu: `scitani soap-do/1921/okres-domazlice`. Poprvé načte přehledy
+     všech okresů daného roku (~30 požadavků), pak jsou v keši.
+  2. `portafontium.py domy <id>` → `číslo domu:id` pro všechny domy obce a **tentýž dům v ostatních letech** (rok:id).
+  3. Id domu je `<kniha>` pro `info`, `snimek`, `link`, `svazek` (klíč `pf_<id>`); arch domu má jen pár snímků.
+     Zápis do dat s druhem `S`.
 - Bez prohlížečového User-Agentu portál vrací 403 (nástroj ho posílá). Jmenné hledání portál nemá – indexy jsou jen uvnitř knih
   (`*i`, `ooi`, `+i` v seznamu knih fary).
 
