@@ -36,26 +36,30 @@ síto asi na 1,2 $.
 3. **Zkouška na známých zápisech** z této knihy: pásy 2–3 stran se zápisem, který už znáš, a několika stran s jinými
    nositeli příjmení (jiný otec, kmotr, matka rozená…). Když známé strany nemají maximum pásu aspoň 0,4, Jev na tuto knihu
    nestačí – čti ji jako dosud.
-4. **Celá kniha** v `eval`:
+4. **Celá kniha** v `eval` – pošle jen pásy, které ještě nemají výsledek v `jev.json`:
    ```python
    import glob, json, os
    D = "pracovni/<svazek>/"
    Q = json.load(open(D + "jev_otazka.json"))
    pasy = {os.path.basename(p)[:-4]: p for p in sorted(glob.glob(D + "pasy/*.jpg"))}
-   b = judge_batch({k: "Crop of a page of a baptism register, <fara> <roky>." for k in pasy}, Q,
-                   intent="síto Jev <svazek>", concurrency=4, retries=2, images={k: [p] for k, p in pasy.items()})
+   r = json.load(open(D + "jev.json")) if os.path.exists(D + "jev.json") else {}
+   todo = {k: p for k, p in pasy.items() if k not in r}
+   b = judge_batch({k: "Crop of a page of a baptism register, <fara> <roky>." for k in todo}, Q,
+                   intent="síto Jev <svazek>", concurrency=4, retries=2, images={k: [p] for k, p in todo.items()})
    open(D + "jev_id.txt", "w").write(b.id)
+   await b.drain(timeout=120)        # první výsledky
+   print(b.status().get("model"))    # musí být typesafe/jev-…, jinak b.cancel()
    ```
    `concurrency=4` je nutné: při výchozích 32 souběžných dotazech s obrázky skončilo 271 z 276 timeoutem. Kniha
    o 3 300 pásech trvá asi hodinu – mezitím dělej jinou práci, na konec čekej nástrojem `wait` (ne blokujícím
    `drain()`). Po resetu kernelu `b = judge_batch.attach(open(D + "jev_id.txt").read())`; po restartu OMP dávka
-   zanikne, proto výsledky hned po doběhnutí ulož:
+   zanikne. Výsledky proto ukládej (po doběhnutí, při delší práci i průběžně):
    ```python
-   r = {k: a["otec"]["bool"] for k, a in b.results().items()}   # "otec" = id otázky v Q
+   r.update({k: a["otec"]["bool"] for k, a in b.results().items()})   # "otec" = id otázky v Q
    json.dump(r, open(D + "jev.json", "w"))
-   print(b.status().get("model"), len(r), "z", len(pasy), "chyby:", b.failed())
+   print(len(r), "z", len(pasy), "chyby:", len(b.failed()))
    ```
-   Pás s chybou neznamená „ne“ – pusť chybějící pásy znovu (stejný kód jen s nimi).
+   Pás s chybou neznamená „ne“. Dokud `len(r) < len(pasy)`, spusť první blok znovu – pošle jen chybějící pásy.
 5. **Výběr** – práh **0,4** na maximum pásu na stranu:
    ```python
    PRAH = 0.4
@@ -65,7 +69,8 @@ síto asi na 1,2 $.
    print(sorted(s for s, p in strana.items() if p >= PRAH))
    print(sorted(k for k, p in r.items() if p >= PRAH))   # pásy ke čtení
    ```
-   Nejslabší známý zápis měl 0,53; falešný poplach stojí přečtení jednoho pásu, propad ztrátu zápisu.
+   Nejslabší známý zápis měl 0,53; falešný poplach stojí přečtení jednoho pásu, propad ztrátu zápisu. 0,4 je hodnota
+   z jedné knihy – jestli platí i pro tuto, ukáže zkouška v kroku 3.
 6. **Čtení.** Označené pásy ať přečte pomocník (`reference/zadani_pomocnika.md`, nejvýš ~50 pásů na běh) s malým
    kontextem, ne hlavní sezení s velkým kontextem – tahy hlavního sezení byly na celém pokusu nejdražší položka.
    Pás ukazuje, kde na straně hledat; kandidáta čti v plném rozlišení. Do dat jde jen to, co je přečteno na snímku
