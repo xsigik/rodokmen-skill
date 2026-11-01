@@ -118,7 +118,7 @@ Adresy u nevyzkoušených portálů ověř při prvním použití (portály se m
   přístup na 30 minut.** V prohlížeči proto jen najdi knihu a cestu k obrázkům, pak už jen nástroj. Pomocníkům to napiš do zadání.
 
 ## ZA Opava (severní Morava, Slezsko, Olomoucko, Litovelsko) – `tools/soal_zoomify.py`
-- Pozor na hranici: obce na Litovelsku a Olomoucku patří pod **ZA Opava**, ne pod MZA Brno.
+- Pozor na hranici: obce na Litovelsku a Olomoucku patří pod **ZA Opava**, ne pod MZA Brno. Těšínsko viz další oddíl.
 - **Bez prohlížeče to nejde.** Badatelna `https://digi.archives.cz/da/` (stará adresa matriky.archives.cz jen přesměruje)
   má ochranu proti robotům – curl ani WebFetch se nedostanou ani na hledání. Potřebuješ připojený prohlížeč (Claude in
   Chrome – uživatel ho připojí příkazem `/chrome`; v OMP `browser` přes eval s `headed: true`, jinak je okno skryté –
@@ -142,6 +142,25 @@ Adresy u nevyzkoušených portálů ověř při prvním použití (portály se m
   (denní limit – pokračuj až další den). Pauza 3–6 s mezi stránkami, dávky do ~80 stránek, žádné rychlé `fetch` hned
   po hledání a stránky výsledků neprocházej za sebou. Delší smyčku pusť v prohlížeči na pozadí, výsledky ukládej do
   `window` nebo `localStorage` a vyzvedávej po částech (nástroj pro JavaScript má limit asi 45 s). Pomocníkům to napiš do zadání.
+
+## Těšínsko (Jablunkovsko, Třinecko, Karvinsko) – ZA Opava a prameny za hranicí
+- **Katolické matriky** české části jsou v ZA Opava (postup výše: prohlížeč, CAPTCHU řeší uživatel). Stejné knihy uvádí
+  i katalog FamilySearch ve sbírce „Czech Republic, Church Books, 1552-1981“ (např. Jablunkov 1617–1937) – když
+  digi.archives.cz blokuje, zkus je tam v uživatelově přihlášeném prohlížeči (nevyzkoušeno).
+- **Evangelíci a. v.** tu tvořili velkou část obyvatel: k jejich zápisům hledej vždy i evangelický sbor. Po toleranci
+  (1781) vedly vlastní matriky toleranční sbory (u Jablunkova Návsí). Do té doby (1709–1781) byl pro luterány celého
+  Těšínského knížectví i okolních panství jediný sbor – Ježíšův kostel v Cieszyně; kde jsou jeho matriky online, neověřeno.
+- **Hranice se měnila** (1920 rozdělení Těšínska, 1938 polský zábor, 1939–1945 německá správa) a fara či sbor mohou
+  být za dnešní hranicí: filiální sbor v Istebné patřil k Návsí do roku 1932.
+- **Polská strana** (Istebna, Jaworzynka, Wisła, Cieszyn): Geneteka, vojvodství `12sl` (slezské), má indexy farností
+  včetně evangelických sborů a u řady zápisů odkaz na sken (dotaz viz Polsko – Geneteka). Archivní skeny:
+  szukajwarchiwach.gov.pl (Archiwum Państwowe w Katowicach).
+- **Slovenská strana** (Kysuce: Čadca, Svrčinovec, Čierne, Skalité, Turzovka): uherské matriky na FamilySearch – oddíl
+  „FamilySearch přes Claude in Chrome“.
+- **1939–1945** (neověřeno): muži z Těšínska často s Deutsche Volksliste a ve Wehrmachtu. Stopy jsou v poválečných
+  spisech o vrácení československého občanství a u mimořádných lidových soudů (ZA Opava, fondy Okresní úřad Těšín,
+  Landrát Těšín, ONV) a v agendě DVL v archivu v Katovicích (szukajwarchiwach, německý i polský název obce
+  a „Volksliste“). Jsou to citlivé údaje – na web jen se souhlasem rodiny (`soukromi.md`).
 
 ## MZA Brno (jižní Morava, Acta Publica) – bez nástroje
 - Portál `https://www.mza.cz/actapublica/`, bez přihlášení. Adresa actapublica.eu bývá za Cloudflare zablokovaná
