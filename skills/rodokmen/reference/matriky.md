@@ -41,6 +41,8 @@ Mladší knihy jsou na matričním úřadě obce s rozšířenou působností / 
    rok bývá jen v nadpisu výtahu. Než napíšeš „zápis tam není“, ověř hlavičky ročníků.
    Rozsah snímků projdeš rychleji v mřížce: `python3 -I tools/nahledy.py <pf|ebad|trebon> <kniha> <od> <do> [x0,y0,x1,y1]`
    (výřez např. jen sloupec data, domu a jména `0,0,0.5,1`; víc snímků v jednom obrázku, číslo snímku v rohu).
+   Celou knihu, kterou máš staženou nebo ji stejně musíš číst celou, v OMP nejdřív protřiď sítem Jev
+   (`reference/sito_jev.md`) a čti jen označené strany.
    **Nejisté datum** (číslice z pozdější poznámky): nejdřív projdi všechny možné roky v domovské farnosti, teprve pak
    okolní fary. (Skutečná chyba: „9?“ přečteno jako 97, prošlo se pět okolních far; sňatek byl doma o pět let dřív.)
 5. **Přečti celý zápis**, pak se podívej i na okolí (dvojčata, další děti stejných rodičů).

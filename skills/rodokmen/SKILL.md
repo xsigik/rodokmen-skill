@@ -273,6 +273,7 @@ Nedělej to pořád. Postup:
 | `ftb_export.py strom.ftb out.ged ["Jméno" rok linie.md [Photos/]]` | záloha z MyHeritage (.ftb) → GEDCOM + přímá linie s původem údajů |
 | `overit.py <snímek> x0,y0,x1,y1 <prefix> [--vylepsit]` | zápis na dvě čitelné poloviny – ověření čtení (souřadnice = zlomky 0–1; `--vylepsit` = vybledlý snímek) |
 | `nahledy.py <pf\|ebad\|trebon> <kniha> <od> <do> [x0,y0,x1,y1]` | mřížka náhledů (3 snímky v obrázku, s číslem snímku) – procházení knihy bez rejstříku |
+| `pasy.py <složka> <snímky…> [--strany 1]` | snímky na překrývající se pásy pro síto Jev (jen OMP, `reference/sito_jev.md`) |
 | `napady.py` | náměty na zajímavosti z dat |
 | `vyrez.py <stránka.jpg> <klíč> x0,y0,x1,y1 [--vylepsit]` | výřez do `zdroje/` a `vyrezy/` |
 | `ramecek.py <klíč> x0,y0,x1,y1` | rámeček čteného místa + kontrolní obrázek |

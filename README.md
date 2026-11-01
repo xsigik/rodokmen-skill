@@ -165,6 +165,8 @@ skills/rodokmen/
   stahuje snímky nástrojem, knihu ale najde přes prohlížeč. Pro Rakousko je postup přes Matriculu.
 - Ostatní archivy (Brno, Opava) Claude obsluhuje obecným postupem přes prohlížeč.
   Funguje to, ale je to pomalejší.
+- V OMP umí knihu bez rejstříku nejdřív protřídit levným modelem **Jev** (TypeSafe, vlastní účet, řádově desítky
+  centů za knihu). Jev jen ukáže strany, kde asi hledaný zápis je; přečte je a zapíše Claude.
 - U úředníků, vojáků a lékařů hledá i v **dobových novinách** (ANNO, Kramerius) – kariéra, vyznamenání, parte.
 - Umí načíst **rodinný strom z MyHeritage** a dalších služeb (export GEDCOM, z MyHeritage i zálohu stromu z programu
   Family Tree Builder) a udělat z něj plán hledání.
