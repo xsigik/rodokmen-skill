@@ -7,8 +7,9 @@ přepis a zápis do dat děláš ty nebo pomocník, jako u každé jiné knihy. 
 
 ## Kdy
 - Kniha bez použitelného rejstříku, kterou stejně musíš číst celou, a máš ji **už staženou celou** nebo ji stáhneš
-  z portálu bez blokování (celé knihy raději z FamilySearch). Z badatelen, které blokují (ZA Opava po ~75 rychlých
-  dotazech, SOA Litoměřice po ~100), stahuj jen snímky, které čteš. Kniha s rejstříkem → rejstřík.
+  z portálu bez blokování (celé knihy raději z FamilySearch). Kniha s rejstříkem → rejstřík.
+  **Z badatelny, která blokuje (ZA Opava po ~75 rychlých dotazech, SOA Litoměřice po ~100), celou knihu kvůli sítu
+  nestahuj** – vezmi ji z FamilySearch, jinak tam knihu listuj jako dosud a stahuj jen snímky, které sám čteš.
 - Platí uživatel ze svého účtu TypeSafe: ~0,0001 $ za pás, ~0,40 $ za knihu o 300 dvoustranách; s přečtením
   označených pásů ~1,2 $ proti ~7,6 $ za čtení celé knihy Sonnetem. Před prvním použitím mu to řekni i to, že se
   snímky matriky pošlou do TypeSafe, a nech si to schválit.
@@ -24,31 +25,32 @@ přepis a zápis do dat děláš ty nebo pomocník, jako u každé jiné knihy. 
 1. **Pásy** ze zmenšených snímků (`nahled`, `_q`, ~1000 px):
    `python3 -I tools/pasy.py pracovni/<svazek>/pasy pracovni/<svazek>/s*_q.jpg` (snímek s jednou stranou:
    `--strany 1`). Každá strana dá ~6 překrývajících se pásů, klíč `0065R01` = snímek 65, pravá strana, pás 1 (shora od 0).
-2. **Otázka** podle oddílu „Jak se ptát“. Ulož ji do `pracovni/<svazek>/jev_otazka.json`, ať jde výsledek zopakovat.
+2. **Otázka** podle oddílu „Jak se ptát“. Každé hledání v knize má vlastní krátký název (`otec_jan_kufa`) a vlastní
+   soubory; otázku ulož do `pracovni/<svazek>/jev_<hledání>_otazka.json`, ať jde výsledek zopakovat.
 3. **Zkouška na známých zápisech** z této knihy: pásy 2–3 stran se zápisem, který už znáš, a několika stran s jinými
    nositeli příjmení (jiný otec, kmotr, matka rozená…). Pokračuj, jen když každá známá strana má maximum pásu
    aspoň 0,4; jinak knihu čti jako dosud.
-4. **Celá kniha** v `eval` – pošle jen pásy, které ještě nemají výsledek v `jev.json`:
+4. **Celá kniha** v `eval` – pošle jen pásy, které ještě nemají výsledek v `jev_<hledání>.json`:
    ```python
    import glob, json, os
-   D = "pracovni/<svazek>/"
-   Q = json.load(open(D + "jev_otazka.json"))
+   D, H = "pracovni/<svazek>/", "<hledání>"
+   Q = json.load(open(D + f"jev_{H}_otazka.json"))
    pasy = {os.path.basename(p)[:-4]: p for p in sorted(glob.glob(D + "pasy/*.jpg"))}
-   r = json.load(open(D + "jev.json")) if os.path.exists(D + "jev.json") else {}
+   r = json.load(open(D + f"jev_{H}.json")) if os.path.exists(D + f"jev_{H}.json") else {}
    todo = {k: p for k, p in pasy.items() if k not in r}
    b = judge_batch({k: "Crop of a page of a baptism register, <fara> <roky>." for k in todo}, Q,
                    intent="síto Jev <svazek>", concurrency=4, retries=2, images={k: [p] for k, p in todo.items()})
-   open(D + "jev_id.txt", "w").write(b.id)
+   open(D + f"jev_{H}_id.txt", "w").write(b.id)
    await b.drain(timeout=120)        # první výsledky
    print(b.status().get("model"))    # musí být typesafe/jev-…, jinak b.cancel() a přihlášení (Nastavení)
    ```
    `concurrency=4`: při výchozích 32 souběžných dotazech s obrázky skončilo 271 z 276 timeoutem. Kniha o 3 300
    pásech trvá asi hodinu – mezitím dělej jinou práci a na konec čekej nástrojem `wait`. Po resetu kernelu
-   `b = judge_batch.attach(open(D + "jev_id.txt").read())`; restart OMP dávku zruší, proto výsledky ukládej
+   `b = judge_batch.attach(open(D + f"jev_{H}_id.txt").read())`; restart OMP dávku zruší, proto výsledky ukládej
    (po doběhnutí, při delší práci i průběžně):
    ```python
    r.update({k: a["otec"]["bool"] for k, a in b.results().items()})   # "otec" = id otázky v Q
-   json.dump(r, open(D + "jev.json", "w"))
+   json.dump(r, open(D + f"jev_{H}.json", "w"))
    print(len(r), "z", len(pasy), "chyby:", len(b.failed()))
    ```
    Hotovo, až `len(r) == len(pasy)`. Pás s chybou nemá výsledek – spusť první blok znovu, pošle jen chybějící pásy.
@@ -67,8 +69,8 @@ přepis a zápis do dat děláš ty nebo pomocník, jako u každé jiné knihy. 
    – vyjde levněji než hlavní sezení, jehož tahy byly na pokusu nejdražší položka. Pás ukazuje, kde na straně hledat;
    kandidáta čti v plném rozlišení. Do dat jde jen to, co je přečteno na snímku (`SKILL.md`, Fáze 2, krok 5).
    Hotovo, až má každý označený pás výsledek: zápis, nebo nic.
-7. **Deník:** síto, otázka (soubor), práh, počet označených a přečtených stran. „Nenalezeno“ piš jen u přečtených
-   stran; u ostatních „síto nic neoznačilo“ – nepřítomnost zápisu síto nedokládá.
+7. **Deník:** síto, název hledání a otázka (soubor), práh, počet označených a přečtených stran. „Nenalezeno“ piš
+   jen u přečtených stran; u ostatních „síto nic neoznačilo“ – nepřítomnost zápisu síto nedokládá.
 
 ## Jak se ptát
 - **Ptej se na roli** (otec, matka, kmotr). Otázka na výskyt jména označí i kmotry, matky a jiné rodiny.
