@@ -6,7 +6,7 @@ Použití (z kořene projektu `python3 -I tools/portafontium.py …`, na Windows
                                                 <fara> = část adresy římskokatolické fary, např. „dolni-bela“
                                                 (https://www.portafontium.eu/contents/register/soap-pn/cirkev-rimskokatolicka/dolni-bela);
                                                 jiná skupina matrik se skupinou před lomítkem: „okresni-urad/domazlice“
-                                                (okresní civilní matriky), „cirkev-evangelicka/as“;
+                                                (okresní civilní matriky), „standesamt/okres-cheb/cheb“, „cirkev-evangelicka/as“;
                                                 obec → fara nástroj nehledá – faru zjisti na portálu (vyhledávání matrik, pole Místo)
   portafontium.py scitani                    -> sčítání lidu: soudní okresy | roky
   portafontium.py scitani <archiv>/<rok>/<okres>   -> obce okresu: id | obec | počet domů   (např. soap-do/1921/okres-domazlice)
@@ -202,8 +202,8 @@ def ascii_slug(s):
 
 def fara(slug):
     slug = slug.strip("/").split(f"/contents/register/{ARCHIV}/")[-1]
-    skupina, _, slug = slug.rpartition("/")
-    skupina, slug = skupina.split("/")[-1] or "cirkev-rimskokatolicka", ascii_slug(slug)
+    skupina, _, slug = slug.rpartition("/")   # „okresni-urad/domazlice“, „standesamt/okres-cheb/cheb“
+    skupina, slug = skupina or "cirkev-rimskokatolicka", ascii_slug(slug)
     if skupina != "cirkev-rimskokatolicka":   # adresy mají příponu skupiny („domazlice-okresni-urad“, „as-evangelicka“)
         mozne = list(dict.fromkeys(re.findall(rf'href="/contents/register/{ARCHIV}/{skupina}/([^"?/]+)"',
                                               get(f"/contents/register/{ARCHIV}/{skupina}"))))

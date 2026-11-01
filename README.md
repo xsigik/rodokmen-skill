@@ -160,7 +160,7 @@ skills/rodokmen/
 ## Co umí a co ne
 - **Hotové nástroje** (bez prohlížeče) mají: východní Čechy (SOA Zámrsk, ARON), jižní Čechy (SOA Třeboň,
   včetně dobrovolnických rejstříků), západní Čechy (SOA Plzeň, Porta fontium – i sčítání lidu 1857–1921 po domech
-  a okresní civilní matriky), střední Čechy (SOA Praha, eBadatelna –
+  a civilní matriky včetně Standesamt 1938–1945), střední Čechy (SOA Praha, eBadatelna –
   i urbáře a gruntovní knihy) a Prahu (AHMP a policejní přihlášky 1850–1914). Pro severní Čechy (SOA Litoměřice)
   stahuje snímky nástrojem, knihu ale najde přes prohlížeč. Pro Rakousko je postup přes Matriculu.
 - Ostatní archivy (Brno, Opava) Claude obsluhuje obecným postupem přes prohlížeč.

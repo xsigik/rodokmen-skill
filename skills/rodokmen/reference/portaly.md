@@ -70,6 +70,9 @@ Adresy u nevyzkoušených portálů ověř při prvním použití (portály se m
   okresní úřady Aš, Cheb, Domažlice, Klatovy, Karlovy Vary, Plzeň, Tachov a další): `portafontium.py fara
   okresni-urad/domazlice` → knihy jako u fary; dál `info`, `snimek`, `svazek`. Evangelické a jiné sbory stejně:
   `fara cirkev-evangelicka/as` (neznámý název → nástroj vypíše možnosti; skupiny jsou na `…/contents/register`).
+- **Standesamt 1938–1945** (civilní matriky pohraničí za německé správy – všichni obyvatelé, nejen bez vyznání; okresy
+  Aš, Cheb, Karlovy Vary, Sokolov, Tachov, Domažlice, Klatovy a další): `fara standesamt/okres-cheb/cheb`
+  (úřady okresu vypíše `fara standesamt/okres-cheb/x`).
 - **Sčítání lidu 1857–1921 po domech** – dům ze zápisu v matrice → celá domácnost se jmény, daty a místy narození,
   v desetiletých krocích. Rok 1921 je ve 28 soudních okresech (Domažlicko, Klatovsko, Plzeňsko, Rokycansko, Tachovsko,
   Kralovicko…), starší roky v méně z nich; Chebsko a Karlovarsko chybí.
