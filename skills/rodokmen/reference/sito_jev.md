@@ -6,10 +6,11 @@ přepis a zápis do dat děláš ty nebo pomocník, jako u každé jiné knihy. 
 `judge_batch()` v `eval`; v Claude Code a Codexu knihu čti jako dosud (`nahledy.py`, pomocníci).
 
 ## Kdy
-- Kniha bez použitelného rejstříku, kterou stejně musíš číst celou, a máš ji **už staženou celou** nebo ji stáhneš
-  z portálu bez blokování (celé knihy raději z FamilySearch). Kniha s rejstříkem → rejstřík.
-  **Z badatelny, která blokuje (ZA Opava po ~75 rychlých dotazech, SOA Litoměřice po ~100), celou knihu kvůli sítu
-  nestahuj** – vezmi ji z FamilySearch, jinak tam knihu listuj jako dosud a stahuj jen snímky, které sám čteš.
+- Kniha bez použitelného rejstříku (nebo dlouhý rozsah let v ní), kterou bys stejně četl celou. Kniha s rejstříkem
+  → rejstřík.
+- Síto stahování nepřidává: prosej jen snímky, které bys stáhl i pro čtení – celou knihu jen tehdy, když bys ji četl
+  celou. Stahuj jako dosud podle `reference/portaly.md` (ZA Opava a SOA Litoměřice blokují rychlé dotazy, snímky ber
+  nástrojem `soal_zoomify.py`).
 - Platí uživatel ze svého účtu TypeSafe: ~0,0001 $ za pás, ~0,40 $ za knihu o 300 dvoustranách; s přečtením
   označených pásů ~1,2 $ proti ~7,6 $ za čtení celé knihy Sonnetem. Před prvním použitím mu to řekni i to, že se
   snímky matriky pošlou do TypeSafe, a nech si to schválit.
