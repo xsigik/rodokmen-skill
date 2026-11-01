@@ -9,7 +9,7 @@ znalost rodiny a rozhodujete.
 
 Vznikl při skutečném hledání předků jedné rodiny.
 
-**Aktuální verze forku: 0.7.1-xsigik (říjen 2026).** Skill se průběžně vyvíjí – opravuji chyby a doplňuji postupy pro další archivy
+**Aktuální verze forku: 0.7.2-xsigik (listopad 2026).** Skill se průběžně vyvíjí – opravuji chyby a doplňuji postupy pro další archivy
 podle toho, na co narazíte vy. Jak aktualizovat, najdete v části [Instalace](#instalace), seznam změn
 v [historii repozitáře](https://github.com/xsigik/rodokmen-skill/commits/main).
 
@@ -60,7 +60,7 @@ s přepisem a překladem, „Co hledáme“ a deník hledání. **[Podívejte se
 AI se vyvíjí rychle a za pár měsíců může skill dávat lepší, nebo jen jiné výsledky. Proto je tu uvedeno, s čím byl
 vyzkoušený.
 
-- **Stav k říjnu 2026 (verze 0.7.1-xsigik):** Claude Code s hlavním modelem **Claude Opus 5.5**. Pomocníci, kteří hledají
+- **Stav k listopadu 2026 (verze 0.7.2-xsigik):** Claude Code s hlavním modelem **Claude Opus 5.5**. Pomocníci, kteří hledají
   a čtou matriky jako první, běží na **Claude Sonnet 5.5**. Každý jejich nález pak hlavní model ověřuje na snímku.
 - Vyzkoušeno na několika skutečných rodokmenech (největší má 243 předků v 11 generacích a 192 matričních zápisů).
   Výsledek se porovnával s větví, kterou jsme léta dělali ručně.
@@ -159,7 +159,8 @@ skills/rodokmen/
 
 ## Co umí a co ne
 - **Hotové nástroje** (bez prohlížeče) mají: východní Čechy (SOA Zámrsk, ARON), jižní Čechy (SOA Třeboň,
-  včetně dobrovolnických rejstříků), západní Čechy (SOA Plzeň, Porta fontium), střední Čechy (SOA Praha, eBadatelna –
+  včetně dobrovolnických rejstříků), západní Čechy (SOA Plzeň, Porta fontium – i sčítání lidu 1857–1921 po domech
+  a okresní civilní matriky), střední Čechy (SOA Praha, eBadatelna –
   i urbáře a gruntovní knihy) a Prahu (AHMP a policejní přihlášky 1850–1914). Pro severní Čechy (SOA Litoměřice)
   stahuje snímky nástrojem, knihu ale najde přes prohlížeč. Pro Rakousko je postup přes Matriculu.
 - Ostatní archivy (Brno, Opava) Claude obsluhuje obecným postupem přes prohlížeč.

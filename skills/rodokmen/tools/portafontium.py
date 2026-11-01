@@ -1,22 +1,28 @@
 #!/usr/bin/env python3
-"""Matriky SOA Plzeň na portálu Porta fontium (portafontium.eu) bez prohlížeče.
+"""Matriky a sčítání lidu SOA Plzeň na portálu Porta fontium (portafontium.eu) bez prohlížeče.
 
 Použití (z kořene projektu `python3 -I tools/portafontium.py …`, na Windows `python -I -X utf8 tools/portafontium.py …`):
   portafontium.py fara <fara>                -> knihy fary: kniha | obce | roky a druhy (* N, oo O, + Z, i index) | popis
                                                 <fara> = část adresy římskokatolické fary, např. „dolni-bela“
                                                 (https://www.portafontium.eu/contents/register/soap-pn/cirkev-rimskokatolicka/dolni-bela);
+                                                jiná skupina matrik se skupinou před lomítkem: „okresni-urad/domazlice“
+                                                (okresní civilní matriky), „cirkev-evangelicka/as“;
                                                 obec → fara nástroj nehledá – faru zjisti na portálu (vyhledávání matrik, pole Místo)
+  portafontium.py scitani                    -> sčítání lidu: soudní okresy | roky
+  portafontium.py scitani <archiv>/<rok>/<okres>   -> obce okresu: id | obec | počet domů   (např. soap-do/1921/okres-domazlice)
+  portafontium.py scitani "<obec>" [rok]     -> obec ve všech okresech daného roku (výchozí 1921; i německý název)
+  portafontium.py domy <id>                  -> domy obce (číslo domu → id) a tentýž dům v jiných letech sčítání
   portafontium.py info <kniha>               -> popis knihy (signatura, druh, text desky…) a počet snímků
-                                                <kniha> = část adresy knihy, např. „dolni-bela-17“
+                                                <kniha> = část adresy knihy, např. „dolni-bela-17“, nebo id domu ze sčítání
   portafontium.py snimek <kniha> <snímek> <vystup.jpg> [nahled] [x0,y0,x1,y1]
                                              -> snímek v plném rozlišení (IIIF, jeden požadavek); „nahled“ = 1/4;
                                                 x0,y0,x1,y1 = jen výřez (zlomky 0..1)
   portafontium.py link <kniha> <snímek>      -> trvalý odkaz na snímek (pole „odkaz“ v zaznamy.json)
   portafontium.py svazek <kniha>             -> zapíše svazek do data/svazky.json (klíč pf_<kniha>)
-Snímek = pořadové číslo náhledu v prohlížeči portálu (1, 2, 3…). Stránky knih se ukládají do pracovni/.cache_pf/.
+Snímek = pořadové číslo náhledu v prohlížeči portálu (1, 2, 3…). Stránky se ukládají do pracovni/.cache_pf/.
 Ber ohled na server: stahuj jen snímky, které čteš.
 """
-import html, http.client, json, os, re, ssl, sys, time, unicodedata, urllib.error, urllib.parse, urllib.request
+import html, http.client, json, os, re, ssl, sys, textwrap, time, unicodedata, urllib.error, urllib.parse, urllib.request
 for _s in (sys.stdout, sys.stderr):   # UTF-8 výstup i na Windows bez -X utf8 (cp1250 neumí třeba „→“)
     if hasattr(_s, "reconfigure"):
         _s.reconfigure(encoding="utf-8", errors="replace")
@@ -111,17 +117,39 @@ def kniha_page(kniha):
     path = os.path.join(CACHE, kniha + ".html")
     if os.path.exists(path):
         return kniha, open(path, encoding="utf-8").read()
-    page = get(f"/register/{ARCHIV}/{kniha}")
+    # číslo = stránka prohlížeče (dům ze sčítání, id vypíše „scitani“ / „domy“), jinak adresa knihy matriky
+    page = get(f"/iipimage/{kniha}" if kniha.isdigit() else f"/register/{ARCHIV}/{kniha}")
     if "data-iip-path" in page:   # kešuj jen opravdovou stránku knihy se snímky
         with open(path, "w", encoding="utf-8", newline="\n") as f:
             f.write(page)
     return kniha, page
 
 
+def navi(page):
+    """Navigace na stránce domu ze sčítání: [(číslo domu, id)], [(rok, id)]; zobrazený dům a rok mají id None."""
+    m = re.search(r'field-name-field-navi.*?<div class="field-item[^"]*">(.*?)</div>', page, re.S)
+    if not m:
+        return [], []
+    items = [(text(a or b), id_ or None) for id_, a, b in
+             re.findall(r'<a href="/iipimage/(\d+)">(.*?)</a>|<big>(.*?)</big>', m.group(1), re.S)]
+    domy = [(x[4:] if x.startswith("Nr. ") else x, i) for x, i in items if not re.fullmatch(r"1[89]\d\d", x)]
+    roky = [(x, i) for x, i in items if re.fullmatch(r"1[89]\d\d", x)]
+    return domy, roky
+
+
 def info(kniha):
     kniha, page = kniha_page(kniha)
-    fields = {}
-    for m in re.finditer(r'<div class="field-label">(.*?)</div>\s*<div class="field-items">(.*?)</div>\s*</div>', page, re.S):
+    fields, popis = {}, page
+    if kniha.isdigit():   # dům ze sčítání: archiv, fond a karton jsou až na stránce popisu domu
+        m = re.search(r'<h1 class="title"[^>]*>(.*?)</h1>', page, re.S)
+        if m:
+            fields["Název"] = re.sub(r",\s*Nr\.\s*\S+$", "", text(m.group(1))).replace("Census", "Sčítání lidu", 1)
+        dum = [x for x, i in navi(page)[0] if i is None]
+        if dum:
+            fields["Číslo domu"] = dum[0]
+        m = re.search(r'<article about="(/census/[^"]+)"', page)   # popis domu (u prvního domu stránka obce)
+        popis = cached(m.group(1), f"census_dum_{kniha}.html") if m else ""
+    for m in re.finditer(r'<div class="field-label">(.*?)</div>\s*<div class="field-items">(.*?)</div>\s*</div>', popis, re.S):
         lab, val = text(m.group(1)).rstrip(":"), text(m.group(2))
         if val and lab not in fields:
             fields[lab] = val
@@ -167,11 +195,24 @@ def snimek(kniha, n, out, nahled=False, crop=None):
     print(out, f"{len(data) // 1024} kB", "odkaz:", BASE + link)
 
 
+def ascii_slug(s):
+    """„Dolní Bělá“ → „dolni-bela“ (adresy na portálu jsou bez diakritiky)."""
+    return unicodedata.normalize("NFKD", s).encode("ascii", "ignore").decode().lower().replace(" ", "-")
+
+
 def fara(slug):
-    slug = slug.strip("/").split("/")[-1]
-    # „Mýto“ → „myto“, „Dolní Bělá“ → „dolni-bela“ (adresa fary na portálu je bez diakritiky)
-    slug = unicodedata.normalize("NFKD", slug).encode("ascii", "ignore").decode().lower().replace(" ", "-")
-    url = f"/contents/register/{ARCHIV}/cirkev-rimskokatolicka/{slug}"
+    slug = slug.strip("/").split(f"/contents/register/{ARCHIV}/")[-1]
+    skupina, _, slug = slug.rpartition("/")
+    skupina, slug = skupina.split("/")[-1] or "cirkev-rimskokatolicka", ascii_slug(slug)
+    if skupina != "cirkev-rimskokatolicka":   # adresy mají příponu skupiny („domazlice-okresni-urad“, „as-evangelicka“)
+        mozne = list(dict.fromkeys(re.findall(rf'href="/contents/register/{ARCHIV}/{skupina}/([^"?/]+)"',
+                                              get(f"/contents/register/{ARCHIV}/{skupina}"))))
+        shoda = [s for s in mozne if s == slug] or [s for s in mozne if s.startswith(slug + "-")]
+        if len(shoda) != 1:
+            sys.exit(f"„{slug}“ ve skupině {skupina} " + ("není jednoznačné" if shoda else "nenalezeno")
+                     + ": " + ", ".join(shoda or mozne))
+        slug = shoda[0]
+    url = f"/contents/register/{ARCHIV}/{skupina}/{slug}"
     out, n = [], 0
     while True:   # seznam knih je po 40 na stránku
         page = get(url + (f"?page={n}" if n else ""))
@@ -186,6 +227,76 @@ def fara(slug):
             return out
 
 
+def cached(url, name):
+    """Stránka sčítání z keše (přehledy okresů se nemění; při potížích smaž pracovni/.cache_pf/census*)."""
+    os.makedirs(CACHE, exist_ok=True)
+    path = os.path.join(CACHE, name)
+    if os.path.exists(path):
+        return open(path, encoding="utf-8").read()
+    page = get(url)
+    if "/census/" in page:   # kešuj jen opravdovou stránku sčítání
+        with open(path, "w", encoding="utf-8", newline="\n") as f:
+            f.write(page)
+    return page
+
+
+def okresy():
+    """[(soudní okres, {rok: „archiv/rok/okres“})] z přehledu sčítání lidu."""
+    out = []
+    for row in re.findall(r"<tr[^>]*>(.*?)</tr>", cached("/contents/census", "census.html"), re.S):
+        cells = re.findall(r"<td[^>]*>(.*?)</td>", row, re.S)
+        cesty = re.findall(r'href="/census/([^/"]+/(\d{4})/[^/"]+)"', row)
+        if cells and cesty:
+            out.append((text(cells[0]), {rok: c for c, rok in cesty}))
+    return out
+
+
+def obce(cesta):
+    """[(id prvního domu, obec, počet domů)] soudního okresu; cesta = archiv/rok/okres."""
+    page = cached(f"/census/{cesta}", "census_" + cesta.replace("/", "_") + ".html")
+    return [(i, text(t), int(n)) for i, t, n in
+            re.findall(r'<a href="/iipimage/(\d+)" title="([^"]+)">[^<]*</a>\s*\((\d+)\s+d', page)]
+
+
+def scitani(a):
+    if not a:
+        for nazev, roky in okresy():
+            vzory = sorted({re.sub(r"/\d{4}/", "/<rok>/", c) for c in roky.values()})
+            print(nazev, "|", " ".join(sorted(roky)), "|", ", ".join(vzory))
+        return
+    if re.fullmatch(r"[\w-]+/\d{4}/[\w-]+", a[0]):
+        seznam = obce(a[0])
+        if not seznam:
+            sys.exit(f"Okres „{a[0]}“ nemá ve sčítání žádné obce – cestu vezmi z výpisu „scitani“.")
+        for i, obec, n in seznam:
+            print(i, "|", obec, "|", n, "domů")
+        return
+    rok = a[1] if len(a) > 1 else "1921"
+    hledam, nalez = ascii_slug(a[0]), 0
+    for _, roky in okresy():
+        if rok in roky:
+            for i, obec, n in obce(roky[rok]):
+                if hledam in ascii_slug(obec):
+                    print(i, "|", obec, "|", n, "domů |", roky[rok])
+                    nalez += 1
+    if not nalez:
+        sys.exit(f"Obec „{a[0]}“ ve sčítání {rok} nenalezena. Zkus jiný rok, německý název, sousední obec "
+                 "nebo seznam okresů („scitani“) – sčítání je online jen pro okresy v seznamu.")
+
+
+def domy(id_):
+    if not id_.isdigit():
+        sys.exit("domy: zadej číselné id domu (z výpisu „scitani“)")
+    kniha, page = kniha_page(id_)
+    d, r = navi(page)
+    if not d:
+        sys.exit(f"{id_} není dům ze sčítání lidu (id vypíše „scitani“)")
+    print(info(id_)[1].get("Název", ""))
+    print("domy (číslo:id):")
+    print(textwrap.fill("  ".join(f"{x}:{i or kniha}" for x, i in d), 110, initial_indent="  ", subsequent_indent="  "))
+    print("tentýž dům v jiných letech (rok:id):", "  ".join(f"{x}:{i or kniha}" for x, i in r))
+
+
 def zkrat(s, n=300):
     return s if len(s) <= n else s[:n].rsplit(" ", 1)[0] + " …"
 
@@ -194,12 +305,19 @@ def svazek(kniha):
     kniha, fields, scans, _ = info(kniha)
     path = os.path.join(ROOT, "data", "svazky.json")
     d = json.load(open(path, encoding="utf-8")) if os.path.exists(path) else {}
-    sig = fields.get("Signatura", kniha)
-    popis = "; ".join(x for x in (fields.get("Místo", ""), fields.get("Text desky", "")) if x)
-    d[f"pf_{kniha}"] = {**d.get(f"pf_{kniha}", {}),   # ruční pole (orientace) zůstanou
-                        "archiv": "SOA Plzeň – Sbírka matrik západních Čech", "portal": "Porta fontium",
-                        "svazek": f"{sig}, {fields.get('Typ', '')}".strip(", "), "popis": popis[:300],
-                        "snimku": len(scans), "url": f"{BASE}/register/{ARCHIV}/{kniha}"}
+    if kniha.isdigit():   # dům ze sčítání lidu
+        fond = ", ".join(x for x in (fields.get("Značka fondu"), fields.get("Karton") and "karton " + fields["Karton"]) if x)
+        zaznam = {"archiv": fields.get("Archiv", "SOA Plzeň"), "portal": "Porta fontium",
+                  "svazek": f"{fields.get('Název', 'Sčítání lidu')}, čp. {fields.get('Číslo domu', '?')}"
+                            + (f" – {fond}" if fond else ""),
+                  "popis": fields.get("Místo", ""), "snimku": len(scans), "url": f"{BASE}/iipimage/{kniha}"}
+    else:
+        sig = fields.get("Signatura", kniha)
+        popis = "; ".join(x for x in (fields.get("Místo", ""), fields.get("Text desky", "")) if x)
+        zaznam = {"archiv": "SOA Plzeň – Sbírka matrik západních Čech", "portal": "Porta fontium",
+                  "svazek": f"{sig}, {fields.get('Typ', '')}".strip(", "), "popis": popis[:300],
+                  "snimku": len(scans), "url": f"{BASE}/register/{ARCHIV}/{kniha}"}
+    d[f"pf_{kniha}"] = {**d.get(f"pf_{kniha}", {}), **zaznam}   # ruční pole (orientace) zůstanou
     with open(path, "w", encoding="utf-8", newline="\n") as f:
         json.dump(d, f, ensure_ascii=False, indent=1)
     print(f"pf_{kniha} ->", d[f"pf_{kniha}"]["svazek"])
@@ -212,7 +330,8 @@ if __name__ == "__main__":
     if a[0] == "fara" and len(a) > 1:
         knihy = fara(a[1])
         if not knihy:
-            sys.exit(f"Fara „{a[1]}“ nenalezena nebo nemá knihy – zkontroluj část adresy (např. dolni-bela).")
+            sys.exit(f"Fara „{a[1]}“ nenalezena nebo nemá knihy – zkontroluj část adresy "
+                     "(např. dolni-bela, okresni-urad/domazlice).")
         for k, c in knihy:
             print(k, "|", " | ".join(zkrat(x) for x in c[1:]))
     elif a[0] == "info" and len(a) > 1:
@@ -236,5 +355,9 @@ if __name__ == "__main__":
         print(BASE + scan(a[1], a[2])[3])
     elif a[0] == "svazek" and len(a) > 1:
         svazek(a[1])
+    elif a[0] == "scitani":
+        scitani(a[1:])
+    elif a[0] == "domy" and len(a) > 1:
+        domy(a[1])
     else:
         sys.exit(__doc__)

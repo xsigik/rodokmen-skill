@@ -8,9 +8,10 @@
 | **Z** | zemřelí, *Liber defunctorum*, *Sterbebuch* | datum úmrtí a pohřbu, dům, jméno, věk, příčina | věk → odhad roku narození, stav (vdova po…) |
 | **I** | index (rejstřík) k N/O/Z | jméno → datum / strana | rychlé hledání; **index bývá neúplný**, negativní výsledek v indexu nic nedokazuje |
 
-Další prameny: sčítání lidu (1857–1921; domácnosti s daty narození), soupis poddaných 1651 (celé rodiny s věkem),
-berní rula 1654 (jen hospodáři), gruntovní/pozemkové knihy (kdo vlastnil který dům – propojí generace přes dům),
-vojenské záznamy, domovské listy, parte. Viz `portaly.md` a `playbook.md` §2.
+Další prameny: sčítání lidu (1857–1921; domácnosti s daty narození – dům ze zápisu v matrice ukáže celou rodinu
+v desetiletých krocích; západní Čechy po domech přes `portafontium.py scitani`), soupis poddaných 1651 (celé rodiny
+s věkem), berní rula 1654 (jen hospodáři), gruntovní/pozemkové knihy (kdo vlastnil který dům – propojí generace přes
+dům), vojenské záznamy, domovské listy, parte. Viz `portaly.md` a `playbook.md` §2.
 
 ## Lhůty (zákon 301/2000 Sb.)
 Do archivu (a tedy online) jde svazek, až od jeho **posledního** zápisu uplyne: narození **100 let**, sňatky **75**, úmrtí **30**.
@@ -47,7 +48,8 @@ Mladší knihy jsou na matričním úřadě obce s rozšířenou působností / 
 7. **Rodina v katolické matrice chybí? Zkus evangelickou nebo židovskou.** Po toleranci (1781) vedly vlastní matriky
    evangelické sbory (a. v. i h. v.), jeden sbor pokrýval desítky obcí; v ARONu mají signatury „R …“ a `aron_search.py`
    je najde podle obce. Ve východních Čechách časté (Rychnovsko, Dobrušsko, Opočensko). Židovské matriky viz `portaly.md`.
-   Ve 20. století (1920–1945) zkus i **civilní matriky** lidí bez vyznání u okresních úřadů (vyzkoušeno v SOA Třeboň, viz `portaly.md`).
+   Ve 20. století (1920–1945) zkus i **civilní matriky** lidí bez vyznání u okresních úřadů (SOA Třeboň a SOA Plzeň,
+   viz `portaly.md`).
 
 ## Čtení písma
 - Kurentový rejstřík: stáhni plné rozlišení a rozřež stránku na čtvrtiny (sloupec jmen + data),
