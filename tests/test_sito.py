@@ -25,20 +25,33 @@ class Item:
 
 
 class Batch:
-    """Stand-in for an OMP judge batch: drain returns a few items at a time and may return early."""
+    """Stand-in for an OMP judge batch: drain returns a few items at a time and may return early;
+    a cancelled run raises on drain; results() holds every settled answer."""
 
-    def __init__(self, bid, items, model, interrupt=False):
-        self.id, self._items, self.model, self.cancelled, self._interrupt = bid, list(items), model, False, interrupt
+    def __init__(self, bid, items, model, interrupt=False, tail_only_in_results=False):
+        self.id, self._items, self.model, self.cancelled = bid, list(items), model, False
+        self._interrupt, self._tail, self._settled = interrupt, tail_only_in_results, []
 
     async def drain(self, timeout=None):
+        if self.cancelled:
+            raise RuntimeError("run cancelled")
         if self._interrupt:
             self._interrupt = False
             raise asyncio.CancelledError()
-        out, self._items = self._items[:2], self._items[2:]
+        out = self._items[:2]
+        if self._tail:   # everything settles at once, drain hands out only the first items
+            self._settled += self._items
+            self._items = []
+        else:
+            self._settled += out
+            self._items = self._items[2:]
         return out
 
     def status(self):
         return {"id": self.id, "running": bool(self._items) and not self.cancelled, "model": self.model}
+
+    def results(self):
+        return {k: it.answers for k, it in self._settled if it.ok}
 
     def cancel(self):
         self.cancelled = True
@@ -47,9 +60,10 @@ class Batch:
 class Judge:
     """Stand-in for judge_batch. score(key) gives P(yes); fail[key] = how many rounds the band fails first."""
 
-    def __init__(self, score=lambda k: 0.1, model=JEV, fail=None, interrupt_first=False):
+    def __init__(self, score=lambda k: 0.1, model=JEV, fail=None, interrupt_first=False, tail_first=False):
         self.score, self.model, self.fail = score, model, dict(fail or {})
-        self.calls, self.batches, self.interrupt_first = [], {}, interrupt_first
+        self.calls, self.batches = [], {}
+        self.interrupt_first, self.tail_first = interrupt_first, tail_first
 
     def __call__(self, states, questions, *, intent, concurrency, retries, images):
         self.calls.append(sorted(states))
@@ -61,7 +75,9 @@ class Judge:
                 items.append((k, Item(False)))
             else:
                 items.append((k, Item(True, {qid: {"bool": self.score(k)}})))
-        b = Batch(f"b{len(self.calls)}", items, self.model, interrupt=self.interrupt_first and len(self.calls) == 1)
+        first = len(self.calls) == 1
+        b = Batch(f"b{len(self.calls)}", items, self.model, interrupt=self.interrupt_first and first,
+                  tail_only_in_results=self.tail_first and first)
         self.batches[b.id] = b
         return b
 
@@ -175,6 +191,35 @@ class SitoTests(unittest.IsolatedAsyncioTestCase):
         s = await sito.proset(judge, self.pasy, "h", Q, popis="page", rozsah=(1, 5), bez_kalibrace=True)
         self.assertTrue(s["uplne"])
         self.assertEqual(len(judge.calls), 1)   # nothing re-sent: the attached batch delivered every band
+
+    async def test_answers_settled_after_the_last_drain_are_kept(self):
+        judge = Judge(tail_first=True)
+        s = await sito.proset(judge, self.pasy, "h", Q, popis="page", rozsah=(1, 5), bez_kalibrace=True)
+        self.assertTrue(s["uplne"])
+        self.assertEqual(len(judge.calls), 1)
+
+    async def test_search_finishes_once_jev_is_available(self):
+        judge = Judge(model="anthropic/claude-haiku-5-5")
+        with self.assertRaisesRegex(sito.SitoChyba, "ne na Jevu"):
+            await sito.proset(judge, self.pasy, "h", Q, popis="page", rozsah=(1, 5), bez_kalibrace=True)
+        judge.model = JEV   # the user logged in to TypeSafe
+        s = await sito.proset(judge, self.pasy, "h", Q, popis="page", rozsah=(1, 5), bez_kalibrace=True)
+        self.assertTrue(s["uplne"])
+        self.assertEqual(s["model"], JEV)
+
+    async def test_dead_batch_is_abandoned_on_resume(self):
+        judge = Judge(interrupt_first=True)
+        with self.assertRaises(asyncio.CancelledError):
+            await sito.proset(judge, self.pasy, "h", Q, popis="page", rozsah=(1, 5), bez_kalibrace=True)
+        judge.batches["b1"].cancel()   # the run died while nobody was waiting
+        s = await sito.proset(judge, self.pasy, "h", Q, popis="page", rozsah=(1, 5), bez_kalibrace=True)
+        self.assertTrue(s["uplne"])
+        self.assertEqual(len(judge.calls), 2)
+
+    async def test_calibration_with_another_description_does_not_count(self):
+        await self.calibrate(Judge(score=lambda k: 0.95))
+        with self.assertRaisesRegex(sito.SitoChyba, "chybí úspěšná kalibrace"):
+            await sito.proset(Judge(), self.pasy, "h", Q, popis="other book", rozsah=(1, 5))
 
     async def test_batch_that_returns_nothing_and_no_model_is_rejected(self):
         judge = Judge(model=None, fail={f"{n:04d}{s}{i:02d}": 9 for n in range(1, 6) for s in "LR" for i in range(3)})

@@ -19,7 +19,7 @@ Z příkazové řádky:
 Složka pásů vzniká nástrojem pasy.py --kniha (záznam pasy.json). Výsledky hledání: <složka>/jev_<hledání>.json,
 kalibrace: <složka>/jev_kalibrace.json, mřížky: <složka>/mrizka_<hledání>/.
 """
-import glob, hashlib, inspect, json, os, re, shutil, subprocess, sys
+import asyncio, glob, hashlib, inspect, json, os, re, shutil, subprocess, sys
 for _s in (sys.stdout, sys.stderr):   # UTF-8 výstup i na Windows bez -X utf8 (cp1250 neumí třeba „→“)
     if hasattr(_s, "reconfigure"):
         _s.reconfigure(encoding="utf-8", errors="replace")
@@ -91,11 +91,9 @@ def _otazka(otazka):
     return qid
 
 
-def _skore(item, qid):
-    if not getattr(item, "ok", False):
-        return None
+def _p(answers, qid):
     try:
-        p = item.answers[qid]["bool"]
+        p = answers[qid]["bool"]
     except (KeyError, TypeError):
         return None
     return float(p) if isinstance(p, (int, float)) and not isinstance(p, bool) else None
@@ -105,34 +103,43 @@ async def _vysledek(x):
     return await x if inspect.isawaitable(x) else x
 
 
+PRERUSENI = (asyncio.CancelledError, KeyboardInterrupt)   # přerušená buňka: dávka běží dál, proset ji příště připojí
+
+
 async def _dobeh(b, qid, over_model, prijmi):
-    """Čeká na dávku až do konce (drain se může vrátit předčasně). Skóre předá až po ověření modelu."""
-    cekajici, model = [], None
+    """Čeká na dávku až do konce (drain se může vrátit předčasně). Skóre předá až po ověření modelu.
+    Po skončení dávky bere všechny odpovědi z results() – drain je po konci už vrátit nemusí."""
+    cekajici, model = {}, None
     try:
         while True:
-            cekajici += list(await b.drain(timeout=30))
+            for k, item in await b.drain(timeout=30):
+                if getattr(item, "ok", False):
+                    p = _p(item.answers, qid)
+                    if p is not None:
+                        cekajici[k] = p
             st = b.status()
             if st.get("model") and not model:
                 model = st["model"]
                 over_model(model)
-            if model and cekajici:
-                prijmi(cekajici, qid)
-                cekajici = []
             if not st.get("running"):
-                while True:
-                    zbytek = list(await b.drain(timeout=1))
-                    if not zbytek:
-                        break
-                    cekajici += zbytek
+                for k, a in (b.results() or {}).items():
+                    p = _p(a, qid)
+                    if p is not None:
+                        cekajici[k] = p
                 if not model:
                     model = b.status().get("model")
                     if not model:
                         raise SitoChyba("Dávka nevrátila model – nejde ověřit, že běžel Jev. Výsledek nepoužívej.")
                     over_model(model)
                 if cekajici:
-                    prijmi(cekajici, qid)
+                    prijmi(cekajici)
                 return model
-    except SitoChyba:   # špatný model: dávku zastavit; přerušená buňka ji naopak nechá běžet (proset ji připojí)
+            if model and cekajici:
+                prijmi(cekajici)
+                cekajici = {}
+    except PRERUSENI:
+        raise
+    except BaseException:   # špatný model nebo mrtvá dávka: zastavit, ať dál neplatíš
         try:
             b.cancel()
         except Exception:
@@ -151,11 +158,8 @@ async def _kola(judge_batch, cesty, otazka, qid, popis, skore, *, intent, concur
     """Posílá pásy bez skóre, dokud je nemají všechny, nejvýš `kola`-krát. Vrátí model."""
     model = None
 
-    def prijmi(items, q):
-        for k, item in items:
-            p = _skore(item, q)
-            if p is not None and k in cesty:
-                skore[k] = p
+    def prijmi(nove):
+        skore.update({k: p for k, p in nove.items() if k in cesty})
         po_prijeti()
 
     for _ in range(kola):
@@ -165,7 +169,13 @@ async def _kola(judge_batch, cesty, otazka, qid, popis, skore, *, intent, concur
         b = judge_batch({k: popis for k in chybi}, otazka, intent=intent, concurrency=concurrency, retries=2,
                         images={k: [p] for k, p in chybi.items()})
         nova_davka(b.id)
-        model = await _dobeh(b, qid, over_model, prijmi) or model
+        try:
+            model = await _dobeh(b, qid, over_model, prijmi) or model
+        except PRERUSENI:
+            raise
+        except BaseException:
+            hotova_davka(b.id)   # zastavená dávka se nepřipojuje; její pásy příště pošle nová dávka
+            raise
         hotova_davka(b.id)
     chybi = sorted(k for k in cesty if k not in skore)
     if chybi:
@@ -213,16 +223,17 @@ async def kalibrace(judge_batch, pasy, zname, *, popis, okoli=4, prah=PRAH, conc
     prosla = all(v["znama"] >= prah for v in vysl)
     path = os.path.join(pasy, "jev_kalibrace.json")
     d = _cti(path) if os.path.exists(path) else {}
-    d[model] = {"nastaveni": _nastaveni(z), "kniha": z["kniha"], "prah": prah, "prosla": prosla, "zname": vysl}
+    d[model] = {"nastaveni": _nastaveni(z), "popis": _otisk(popis), "kniha": z["kniha"], "prah": prah,
+                "prosla": prosla, "zname": vysl}
     _uloz(path, d)
     return {"model": model, "prosla": prosla, "prah": prah,
             "zname": [{k: v[k] for k in ("nazev", "strana", "znama", "ostatni_max")} for v in vysl]}
 
 
-def _kalibrace_ok(pasy, z, model):
+def _kalibrace_ok(pasy, z, model, popis):
     path = os.path.join(pasy, "jev_kalibrace.json")
     e = (_cti(path) if os.path.exists(path) else {}).get(model)
-    return bool(e and e["prosla"] and e["nastaveni"] == _nastaveni(z))
+    return bool(e and e["prosla"] and e["nastaveni"] == _nastaveni(z) and e.get("popis") == _otisk(popis))
 
 
 def _cesta(pasy, hledani):
@@ -264,9 +275,10 @@ async def proset(judge_batch, pasy, hledani, otazka, *, popis, rozsah, vynechat=
             raise SitoChyba(f"{path} je z modelu {d['model']}, teď běží {m}. Výsledky dvou verzí nemíchej – "
                             "nová kalibrace a nové hledání pod jiným názvem.")
         if not bez_kalibrace and d["kalibrace"] != m:
-            if not _kalibrace_ok(pasy, z, m):
-                raise SitoChyba(f"Pro {m} a tyto pásy chybí úspěšná kalibrace (sito.kalibrace na známých zápisech "
-                                "z téže knihy). Bez ní jen bez_kalibrace=True a výsledek je „nekalibrováno“.")
+            if not _kalibrace_ok(pasy, z, m, popis):
+                raise SitoChyba(f"Pro {m}, tyto pásy a tento popis chybí úspěšná kalibrace (sito.kalibrace na známých "
+                                "zápisech z téže knihy, se stejným popisem). Bez ní jen bez_kalibrace=True a výsledek "
+                                "je „nekalibrováno“.")
             d["kalibrace"] = m
         d["model"] = m
 
@@ -283,21 +295,22 @@ async def proset(judge_batch, pasy, hledani, otazka, *, popis, rozsah, vynechat=
 
     ulozit()
     # Po resetu kernelu: nejdřív dočerpat rozběhnutou dávku.
+    def prijmi(nove):
+        skore.update({k: p for k, p in nove.items() if k in cesty})
+        ulozit()
+
     for bid in [x for x in d["davky"] if x not in d["hotove_davky"]]:
         try:
             b = await _vysledek(judge_batch.attach(bid))
+            await _dobeh(b, qid, over, prijmi)
+        except PRERUSENI:
+            raise
+        except SitoChyba:
+            hotova(bid)   # důvod (model, kalibrace) platí i pro novou dávku – ohlásit
+            raise
         except Exception:
-            hotova(bid)   # dávka už neexistuje; její pásy bez skóre se pošlou znovu
+            hotova(bid)   # dávka už neexistuje nebo skončila chybou; její pásy bez skóre pošle nová dávka
             continue
-
-        def prijmi(items, q):
-            for k, item in items:
-                p = _skore(item, q)
-                if p is not None and k in cesty:
-                    skore[k] = p
-            ulozit()
-
-        await _dobeh(b, qid, over, prijmi)
         hotova(bid)
     await _kola(judge_batch, cesty, otazka, qid, popis, skore, intent=f"síto {hledani}", concurrency=concurrency,
                 kola=kola, over_model=over, po_prijeti=ulozit, nova_davka=nova, hotova_davka=hotova)

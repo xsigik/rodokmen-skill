@@ -54,8 +54,8 @@ knihy (nemocnice, ústavy, města), kde hledáš jednu osobu; farnost, kde žila
                         popis=POPIS)
    ```
    Projde, když maximum pásů známé strany je aspoň 0,4 u každého zápisu; okolní strany jen vypíše (odhad falešných
-   poplachů). Platí pro tuto složku pásů a tuto verzi Jevu. Neprojde-li, knihu čti jako dosud. Kalibrace ze
-   sousedního svazku tuto knihu nekalibruje.
+   poplachů). Platí pro tuto složku pásů, tuto verzi Jevu a tento `POPIS`; otázky kalibrace a hledání mají stejný
+   úvod, liší se jen jménem. Neprojde-li, knihu čti jako dosud. Kalibrace ze sousedního svazku tuto knihu nekalibruje.
 6. **Prosetí** v buňce `eval` bez časového limitu (`timeout: 0`):
    ```python
    s = await sito.proset(judge_batch, PASY, "<hledání>", Q, popis=POPIS, rozsah=(3, 260), vynechat=(…))
