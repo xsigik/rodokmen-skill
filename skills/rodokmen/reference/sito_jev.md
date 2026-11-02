@@ -1,9 +1,13 @@
 # Síto Jev – třídění knihy bez rejstříku (jen OMP)
 
-**Jev** (TypeSafe, `typesafe/jev-1.14.0`) je levný model, který na typovanou otázku nad obrázkem vrací pravděpodobnost
+**Jev** (TypeSafe, `typesafe/jev-<verze>`) je levný model, který na typovanou otázku nad obrázkem vrací pravděpodobnost
 („je na tomto výřezu křest, kde je otcem Jan Kufa?“). Je to **síto**: ukáže pásy, které stojí za přečtení. Čtení,
-přepis a zápis do dat děláš ty nebo pomocník, jako u každé jiné knihy. V OMP je zabudovaný jako `judge()` /
-`judge_batch()` v `eval`; v Claude Code a Codexu knihu čti jako dosud (`nahledy.py`, pomocníci).
+přepis a zápis do dat děláš ty nebo pomocník, jako u každé jiné knihy. V OMP je zabudovaný jako `judge_batch()`
+v `eval`; nástroj `tools/sito.py` je modul pro `eval`, který ho volá a hlídá model, úplnost a kalibraci. V Claude Code
+a Codexu knihu čti jako dosud (`nahledy.py`, pomocníci).
+
+Síto vidí jen to, na co se ptáš: vedlejší nálezy (příbuzný o řádek vedle, svědek) přehlédne. Hodí se na velké cizí
+knihy (nemocnice, ústavy, města), kde hledáš jednu osobu; farnost, kde žila celá rodina, raději čti pomocníkem.
 
 ## Kdy
 - Kniha bez použitelného rejstříku (nebo dlouhý rozsah let v ní), kterou bys stejně četl celou. Kniha s rejstříkem
@@ -18,60 +22,59 @@ přepis a zápis do dat děláš ty nebo pomocník, jako u každé jiné knihy. 
 ## Nastavení (jednou)
 1. Uživatel se přihlásí v OMP: `/login typesafe`. Proměnná `TYPESAFE_API_KEY` funguje jen tehdy, když ji vidí proces,
    ze kterého se OMP spouští; klíč přidaný do `.zshrc` za běhu OMP nevidí.
-2. Role `judge` = `typesafe/jev-1.14.0` (po přihlášení výchozí; nastavení `modelRoles.judge`).
-   Bez přihlášení `judge` **tiše** použije náhradní chatový model (třeba Haiku) – dražší, pomalejší a s nekalibrovanými
-   čísly. Proto kontrola modelu v kroku 4.
+2. Role `judge` = `typesafe/jev-…` (po přihlášení výchozí; nastavení `modelRoles.judge`). Bez přihlášení `judge`
+   tiše použije náhradní chatový model (třeba Haiku) s nekalibrovanými čísly – `sito.py` takovou dávku zastaví.
+3. `tools/pasy.py` se `--kniha` a `tools/sito.py` jsou od verze 0.7.4-xsigik; do projektu je přinese aktualizace
+   projektu (`novy_projekt.py`, viz SKILL.md „Verze“), ne samotná aktualizace pluginu.
 
 ## Postup
-1. **Pásy** ze zmenšených snímků (`nahled`, `_q`, ~1000 px):
-   `python3 -I tools/pasy.py pracovni/<svazek>/pasy pracovni/<svazek>/s*_q.jpg` (snímek s jednou stranou:
-   `--strany 1`). Každá strana dá ~6 překrývajících se pásů, klíč `0065R01` = snímek 65, pravá strana, pás 1 (shora od 0).
-2. **Otázka** podle oddílu „Jak se ptát“. Každé hledání v knize má vlastní krátký název (`otec_jan_kufa`) a vlastní
-   soubory; otázku ulož do `pracovni/<svazek>/jev_<hledání>_otazka.json`, ať jde výsledek zopakovat.
-3. **Zkouška na známých zápisech** z této knihy: pásy 2–3 stran se zápisem, který už znáš, a několika stran s jinými
-   nositeli příjmení (jiný otec, kmotr, matka rozená…). Pokračuj, jen když každá známá strana má maximum pásu
-   aspoň 0,4; jinak knihu čti jako dosud.
-4. **Celá kniha** v `eval` – pošle jen pásy, které ještě nemají výsledek v `jev_<hledání>.json`:
+1. **Rozvržení** – jeden snímek knihy si prohlédni dřív, než spočítáš cenu: kolik stran je na snímku, kde je
+   sloupec se jménem, pořadí jméno/příjmení, kolik zápisů na stranu. Tiskopis, kde jeden zápis jde přes celou
+   dvoustranu (knihy zemřelých kolem 1900–1920), má jméno jen vlevo: stahuj jen výřez levé strany. Cena ≈ počet
+   snímků × počet pásů na snímek × 0,00013 $. Hotovo, až víš výřez (zlomky x0,y0,x1,y1) a `--strany`.
+2. **Stažení a pásy.** Stahuj jen výřez (`portafontium.py snimek <kniha> <n> <soubor> x0,y0,x1,y1`,
+   `ahmp_scan.py <XID> <n> <soubor> 1 x0,y0,x1,y1`; blokující badatelny viz `reference/portaly.md`), pak
+   `python3 -I tools/pasy.py pracovni/<kniha>/pasy pracovni/<kniha>/s*.jpg --kniha <kniha> [--strany 1]`.
+   Každá kniha má vlastní složku pásů; `pasy.py` si zapíše knihu, nastavení a otisk každého snímku (`pasy.json`)
+   a jinou knihu nebo jiné nastavení do složky nepustí. Klíč `0065R01` = snímek 65, pravá strana (L/R, jedna
+   strana P), pás 1 shora od 0. Složky ze 0.7.3 bez `pasy.json` nařež znovu do nové složky.
+3. **Načtení nástroje** v `eval` (z kořene projektu; `importlib`, ať se nespustí příkazová řádka nástroje):
    ```python
-   import glob, json, os
-   D, H = "pracovni/<svazek>/", "<hledání>"
-   Q = json.load(open(D + f"jev_{H}_otazka.json"))
-   pasy = {os.path.basename(p)[:-4]: p for p in sorted(glob.glob(D + "pasy/*.jpg"))}
-   r = json.load(open(D + f"jev_{H}.json")) if os.path.exists(D + f"jev_{H}.json") else {}
-   todo = {k: p for k, p in pasy.items() if k not in r}
-   b = judge_batch({k: "Crop of a page of a baptism register, <fara> <roky>." for k in todo}, Q,
-                   intent="síto Jev <svazek>", concurrency=4, retries=2, images={k: [p] for k, p in todo.items()})
-   open(D + f"jev_{H}_id.txt", "w").write(b.id)
-   await b.drain(timeout=120)        # první výsledky
-   print(b.status().get("model"))    # musí být typesafe/jev-…, jinak b.cancel() a přihlášení (Nastavení)
+   import importlib.util
+   _s = importlib.util.spec_from_file_location("sito", "tools/sito.py")
+   sito = importlib.util.module_from_spec(_s); _s.loader.exec_module(sito)
+   PASY = "pracovni/<kniha>/pasy"
+   POPIS = "Crop of a page of the <kniha> death register."   # posílá se ke každému pásu
    ```
-   `concurrency=4`: při výchozích 32 souběžných dotazech s obrázky skončilo 271 z 276 timeoutem. Kniha o 3 300
-   pásech trvá asi hodinu – mezitím dělej jinou práci a na konec čekej nástrojem `wait`. Po resetu kernelu
-   `b = judge_batch.attach(open(D + f"jev_{H}_id.txt").read())`; restart OMP dávku zruší, proto výsledky ukládej
-   (po doběhnutí, při delší práci i průběžně):
+4. **Otázka** podle oddílu „Jak se ptát“: jedna otázka typu `bool` na jedno hledání. Pro kalibraci stejná otázka
+   se jménem známého zápisu.
+5. **Kalibrace v téže knize** – 2–3 zápisy, které jsi sám přečetl na stránce této knihy, se stranou:
    ```python
-   r.update({k: a["otec"]["bool"] for k, a in b.results().items()})   # "otec" = id otázky v Q
-   json.dump(r, open(D + f"jev_{H}.json", "w"))
-   print(len(r), "z", len(pasy), "chyby:", len(b.failed()))
+   await sito.kalibrace(judge_batch, PASY, [{"nazev": "bauman", "strana": "0120L", "otazka": Q_bauman}, …],
+                        popis=POPIS)
    ```
-   Hotovo, až `len(r) == len(pasy)`. Pás s chybou nemá výsledek – spusť první blok znovu, pošle jen chybějící pásy.
-5. **Výběr** – práh **0,4** na maximum pásu na stranu:
+   Projde, když maximum pásů známé strany je aspoň 0,4 u každého zápisu; okolní strany jen vypíše (odhad falešných
+   poplachů). Platí pro tuto složku pásů a tuto verzi Jevu. Neprojde-li, knihu čti jako dosud. Kalibrace ze
+   sousedního svazku tuto knihu nekalibruje.
+6. **Prosetí** v buňce `eval` bez časového limitu (`timeout: 0`):
    ```python
-   PRAH = 0.4
-   strana = {}
-   for k, p in r.items():
-       strana[k[:5]] = max(p, strana.get(k[:5], 0))   # "0065R"
-   print(sorted(s for s, p in strana.items() if p >= PRAH))
-   print(sorted(k for k, p in r.items() if p >= PRAH))   # pásy ke čtení
+   s = await sito.proset(judge_batch, PASY, "<hledání>", Q, popis=POPIS, rozsah=(3, 260), vynechat=(…))
    ```
-   Nejslabší známý zápis měl 0,53; falešný poplach stojí přečtení jednoho pásu, propad ztrátu zápisu. 0,4 je hodnota
-   z jedné knihy – jestli platí i pro tuto, ukázala zkouška v kroku 3.
-6. **Čtení.** Označené pásy čte pomocník s malým kontextem (`reference/zadani_pomocnika.md`, nejvýš ~50 pásů na běh)
-   – vyjde levněji než hlavní sezení, jehož tahy byly na pokusu nejdražší položka. Pás ukazuje, kde na straně hledat;
-   kandidáta čti v plném rozlišení. Do dat jde jen to, co je přečteno na snímku (`SKILL.md`, Fáze 2, krok 5).
-   Hotovo, až má každý označený pás výsledek: zápis, nebo nic.
-7. **Deník:** síto, název hledání a otázka (soubor), práh, počet označených a přečtených stran. „Nenalezeno“ piš
-   jen u přečtených stran; u ostatních „síto nic neoznačilo“ – nepřítomnost zápisu síto nedokládá.
+   `rozsah` = snímky, které má síto pokrýt; `vynechat` = desky a prázdné listy. Nástroj odmítne díru v rozsahu,
+   jiný model než Jev, jinou verzi Jevu nebo jinou otázku než v uloženém hledání a knihu bez kalibrace
+   (`bez_kalibrace=True` dovolí běh, výsledek zůstane „nekalibrováno“). Selhané pásy posílá znovu, dokud nemají skóre
+   všechny; jinak skončí chybou. Výsledky ukládá průběžně do `PASY/jev_<hledání>.json`; přerušenou buňku spusť
+   znovu – připojí rozběhnutou dávku a pošle jen chybějící pásy. Souběh 6 (při 16 selhalo ~25 % pásů).
+   Hotovo, až `s["uplne"]` je True.
+7. **Výběr a čtení.** `python3 -I tools/sito.py mrizka PASY <hledání> [--vyrez 0.5,1]` udělá obrázky 2 × 5 pásů nad
+   prahem 0,4 s popiskem; `--vyrez` = jen sloupec jména. K pásu 00 přidá pás 01: pás 00 nese záhlaví tiskopisu
+   (častý falešný poplach ~0,5) a první zápis je v něm useknutý. Mřížky čti ty nebo pomocník
+   (`reference/zadani_pomocnika.md`); kandidáta ověř v plném rozlišení. Do dat jde jen to, co je přečteno na snímku
+   (`SKILL.md`, Fáze 2, krok 5). Hotovo, až má každý označený pás výsledek: zápis, nebo nic.
+8. **Deník a zpráva rodině.** `python3 -I tools/sito.py stav PASY <hledání>` vypíše model, kalibraci, pokrytí
+   a počty nad prahem (kód 1 = neúplné). Do deníku: kniha, rozsah, hledání, otázka, práh, kalibrace (zápisy a jejich
+   skóre), počet označených a přečtených pásů. U přečtených stran „nenalezeno“; u ostatních **„síto nic
+   neoznačilo“** s uvedením, ve kterých knihách prošla kalibrace – nepřítomnost zápisu síto nedokládá.
 
 ## Jak se ptát
 - **Ptej se na roli** (otec, matka, kmotr). Otázka na výskyt jména označí i kmotry, matky a jiné rodiny.
@@ -80,13 +83,20 @@ přepis a zápis do dat děláš ty nebo pomocník, jako u každé jiné knihy. 
 - Úvod otázky popíše stavbu zápisu v této knize (pořadí údajů, jak se píše otec, matka, kmotři), otázka se ptá
   na jeden úsudek. Logiku (práh, kombinace, datum, věk) dělá kód – v počítání a porovnávání dat je Jev slabý
   ([jaggedness](https://docs.typesafe.ai/go/jaggedness.md)).
-- Vzor pro křty 18. století; jméno otce i vzory zápisů v úvodu nahraď podle hledání a knihy. Pro sňatky a úmrtí
-  postav úvod stejně podle stavby zápisu (zatím nevyzkoušeno).
+- Vzor pro křty 18. století; jméno otce i vzory zápisů v úvodu nahraď podle hledání a knihy.
   ```json
   {"otec": {"type": "bool",
     "instructions": "The image is a crop of a page of an 18th-century Latin baptism register in old handwriting. Each entry: day, CHILD's first name (underlined, at line start), then the FATHER's first name in the genitive and his surname, then 'et' and the MOTHER (e.g. 'Anna Motykowa', 'Anna Kuffowa'), then place, then godparents after 'Lev:' (e.g. 'Paulus Podeschwa et Anna Joannis Kuffa uxor' = godmother Anna, wife of Jan Kufa). Is there an entry in which the FATHER of the baptised child is Joannes Kuffa (written 'Joannis Kuffa' right after the child's name)? The child's own name, the mother, and godparents do not count.",
     "criteria": {"true": "An entry reads '<child name> Joannis Kuffa et <mother>'.",
                  "false": "No entry has father Joannis Kuffa; Kuffa appears only as mother (Kuffowa), as godparent or godparent's husband, or not at all."}}}
+  ```
+- Vzor pro knihy zemřelých s tiskopisem přes dvoustranu (pásy jen z levé strany); pořadí jméno/příjmení podle
+  knihy (Všeobecná nemocnice „Příjmení Jméno“, Bohnice „Jméno Příjmení“ podtržené):
+  ```json
+  {"zem": {"type": "bool",
+    "instructions": "The image is a horizontal crop of the left page of a death register (1911-1922) of the General Hospital in Prague, handwritten mostly in Czech. Columns from left: entry number; day and month of death and burial; place of death (often ditto marks); then the column 'Zemřelý' with the DECEASED person's surname FIRST, then first name, then status/occupation and residence (e.g. 'Bauman Julie, žena bednáře v Dolní Počernici č. 160'). Is there an entry in which the DECEASED person is Josef Novák (written roughly 'Novák Josef' at the start of the 'Zemřelý' column)? A spouse or parent with that name does not count.",
+    "criteria": {"true": "An entry's deceased-person column begins with 'Novák Josef' or a close spelling.",
+                 "false": "No entry's deceased person is Josef Novák."}}}
   ```
 
 ## Měření (N Jablunkov 1745–1769, ZA Opava, latinsky, 278 dvoustran bez rejstříku)
@@ -101,3 +111,14 @@ přepis a zápis do dat děláš ty nebo pomocník, jako u každé jiné knihy. 
 Těžké strany byly vybrané podle chyb starší otázky a vzory v úvodu pocházejí z nich, takže pokles poplachů je zčásti
 přizpůsobení zkoušce. Záměny rolí nezmizely (kmotra „Anna Joannis Kuffa uxor“ 0,61, dítě „Josephus Joannes Pauli
 Kuffa“ 0,68). Otázka na roli s prahem 0,4 na celé knize zatím neběžela; označených pásů bude víc než 112.
+
+## Měření 2 (knihy zemřelých 1912–1922: PF Dobřany, AHMP Všeobecná nemocnice Z8–Z11, Bohnice Z2–Z3)
+| Pokus | Výsledek |
+|---|---|
+| 1 670 snímků, jen levá strana, ~11 000 pásů vč. kalibrací | ≈ 1,4–1,8 $; 4 860 pásů za 88 min při souběhu 10 |
+| Kalibrace v téže knize, 3 známé zápisy na knihu (6 knih) | známé strany 0,76–0,98, okolní strany nejvýš 0,22–0,68 |
+| Práh 0,4 | 108 označených pásů (~1 %), všechny přečteny, všechny falešné (hledaný zápis nebyl nalezen) |
+| Souběh | 16 → ~25 % pásů selhalo, 10 → 6 z 4 860, 6 → 0 |
+
+Většinu poplachů v Z9 dělaly pásy 00 se záhlavím tiskopisu. Dobřany byly kalibrované jen v sousedních svazcích –
+ty výsledky platí jako „nekalibrováno“. Podrobnosti: issue #21.
