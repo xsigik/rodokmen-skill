@@ -1,6 +1,11 @@
 #!/usr/bin/env python3
 """Matriky a archiválie SOA Praha (eBadatelna, ebadatelna.soapraha.cz) bez prohlížeče a bez přihlášení.
 
+ZATÍM VYPNUTO: archiv od 2. 11. 2026 nástroj zakazuje (robots.txt „User-agent: rodokmen / Disallow: /“, HTTP 403)
+a brzda tools/slusne.py ho proto zastaví. Fungují jen link a a-link (bez sítě) a snimek / a-snimek se snímky,
+které uložil prohlížeč do mezipaměti (výřez a náhled bez sítě). Matriky čti v prohlížeči
+(reference/portaly.md, SOA Praha). Nástroj zůstává pro případ, že archiv přístup povolí.
+
 Použití (z kořene projektu):
   ebadatelna.py hledat "Obec"              -> lokality z našeptávače portálu (celý název „Obec - obec X - okres Y“);
                                             portál nemá číselná id lokalit, do „matriky“ dávej celý název
@@ -21,18 +26,18 @@ Použití (z kořene projektu):
 Trvalé odkazy: matrika https://ebadatelna.soapraha.cz/d/<matrikaId>/<snímek>,
                archiválie https://ebadatelna.soapraha.cz/a/<archivalieId>/<snímek>
 Snímky se číslují od 1 (jako v prohlížeči portálu). Na výřez a náhled je potřeba ImageMagick (magick).
-Originály snímků se ukládají do pracovni/.cache_ebad/ – náhled a pak výřez stejného snímku se stahují jen jednou.
 Portál má denní údržbu kolem 4:44 (asi 2 minuty). Ber ohled na server: stahuj jen snímky, které čteš.
 """
 import glob, html, http.client, http.cookiejar, json, os, re, shutil, subprocess, sys, tempfile, time, unicodedata
 import urllib.error, urllib.parse, urllib.request
+import os as _os, sys as _sys; _sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__))); import slusne  # noqa: E402 – brzda proti zablokování archivem (společný limit dotazů, tools/slusne.py)
+import cache  # noqa: E402 – sdílená mezipaměť snímků (tools/cache.py)
 for _s in (sys.stdout, sys.stderr):   # UTF-8 výstup i na Windows bez -X utf8 (cp1250 neumí třeba „→“)
     if hasattr(_s, "reconfigure"):
         _s.reconfigure(encoding="utf-8", errors="replace")
 
 BASE = "https://ebadatelna.soapraha.cz"
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-CACHE = os.path.join(ROOT, "pracovni", ".cache_ebad")
 _cj = http.cookiejar.CookieJar()
 _op = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(_cj))
 _op.addheaders = [("User-Agent", "Mozilla/5.0 (rodokmen)"), ("Accept-Language", "cs")]
@@ -71,11 +76,9 @@ def get(path, referer=None, binary=False, data=None, ajax_base=None):
                 d = r.read()
                 return (d if binary else d.decode("utf-8", "replace")), r.geturl()
         except urllib.error.HTTPError as e:
-            if e.code == 429 and attempt < 3:   # moc požadavků – počkat celé Retry-After a zkusit znovu
+            if e.code == 429 and attempt < 3:   # moc požadavků – počkat (podle Retry-After) a zkusit znovu
                 ra = e.headers.get("Retry-After", "")
-                wait = int(ra) if ra.isdigit() else 30 * (attempt + 1)
-                if wait > 300:
-                    raise Chyba(f"portál chce pauzu {wait // 60} min (příliš mnoho požadavků) – zkus to později.")
+                wait = min(int(ra), 120) if ra.isdigit() else 30 * (attempt + 1)
             elif e.code < 500 or attempt == 3:
                 raise Chyba(f"portál vrátil chybu HTTP {e.code} ({url}).{udrzba()}")
         except (OSError, http.client.HTTPException) as e:   # i useknutý přenos (IncompleteRead)
@@ -304,31 +307,16 @@ def snimek(druh, xid, n, out, volby):
         except (ValueError, AssertionError):
             raise Chyba(f"výřez „{vyrez}“ má být x0,y0,x1,y1 jako zlomky 0–1 (x0<x1, y0<y1), např. 0,0,0.5,0.5.")
     ref = odkaz(druh, xid, n)
-    os.makedirs(CACHE, exist_ok=True)
-    cache = next((p for p in (os.path.join(CACHE, f"{druh}_{xid}_{int(n)}{x}") for x in (".jpg", ".png"))
-                  if os.path.exists(p)), None)
-    if cache:
-        with open(cache, "rb") as f:
-            data = f.read()
-    else:
-        page, url = get(ref)
-        co = "matrika" if druh == "d" else "archiválie"
-        if NEEXISTUJE in page:
-            raise Chyba(f"{co} {xid} nenalezena – zkontroluj číslo.")
-        pc = re.search(r"var pageCount = (\d+);", page)
-        src = re.search(r'<img id="scanImage"[^>]*src="([^"]+)"', page)
-        if not pc or not src:
-            raise Chyba(f"stránka snímku nemá očekávaný obsah ({ref}).{udrzba()}")
-        if int(n) > int(pc.group(1)):
-            raise Chyba(f"snímek {n} neexistuje – {co} {xid} má snímky 1–{pc.group(1)}.")
-        data, _ = get(urllib.parse.urljoin(url, html.unescape(src.group(1))), referer=url, binary=True)
-        if not (data[:3] == b"\xff\xd8\xff" or data[:8] == b"\x89PNG\r\n\x1a\n"):
-            raise Chyba(f"portál místo obrázku vrátil něco jiného ({len(data)} B) – snímek chybí nebo údržba?{udrzba()}")
-        cache = os.path.join(CACHE, f"{druh}_{xid}_{int(n)}" + (".jpg" if data[:3] == b"\xff\xd8\xff" else ".png"))
-        tmp = f"{cache}.{os.getpid()}.tmp"
-        with open(tmp, "wb") as f:
-            f.write(data)
-        os.replace(tmp, cache)   # atomicky – víc procesů nad stejným snímkem si nepřekáží
+    # archiv nástroj zakazuje (robots.txt): snímek jen z mezipaměti, kam ho uložil prohlížeč (reference/portaly.md)
+    ulozeny = cache.cesta(cache.klic_ebadatelna(druh, xid, n))
+    if not os.path.exists(ulozeny):
+        raise Chyba(f"snímek {ref} ještě není uložený – otevři ho v prohlížeči a ulož úryvkem z reference/portaly.md "
+                    "(SOA Praha), pak tento příkaz zopakuj. Archiv stahování nástrojem zakazuje.")
+    print("z mezipaměti, bez stahování:", ulozeny)
+    with open(ulozeny, "rb") as f:
+        data = f.read()
+    if not (data[:3] == b"\xff\xd8\xff" or data[:8] == b"\x89PNG\r\n\x1a\n"):
+        raise Chyba(f"uložený snímek {ulozeny} je poškozený – smaž ho a ulož znovu z prohlížeče.")
     d = os.path.dirname(os.path.abspath(out))
     os.makedirs(d, exist_ok=True)
     jpeg_ven = os.path.splitext(out)[1].lower() in (".jpg", ".jpeg")

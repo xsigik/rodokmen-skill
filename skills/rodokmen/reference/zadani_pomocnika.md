@@ -29,8 +29,8 @@ PROJEKT: <absolutní cesta ke kořeni projektu>
 VÝSTUP:  <absolutní cesta>/pracovni/pom_<větev>/vysledek.md   (piš jen sem)
 NÁSTROJ: <např. python3 -I tools/portafontium.py snimek <kniha> <snímek> <soubor> – spouštěj z kořene projektu>
          <technické pasti z reference/matriky.md: macOS zsh / Windows python -I -X utf8, magick>
-         <kniha bez rejstříku: procházej ji přes python3 -I tools/nahledy.py <pf|ebad|trebon> <kniha> <od> <do> [výřez sloupců],
-          zápis čti přes python3 -I tools/overit.py>
+         <kniha bez rejstříku: procházej ji přes python3 -I tools/mapa_knihy.py <aron|pf|ahmp> <kniha> <od> <do> 1
+          --vedle --ostre --vyrez <výřez sloupců>, zápis čti přes python3 -I tools/overit.py>
          <síto Jev (reference/sito_jev.md): seznam označených pásů s cestami; každý pás přečti, kandidáta
           v plném rozlišení na snímku přes python3 -I tools/overit.py>
          <FamilySearch: přečti si nejdřív <SKILL_DIR>/reference/portaly.md, oddíl „FamilySearch v Chromu uživatele“,

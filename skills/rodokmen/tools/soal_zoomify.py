@@ -3,7 +3,8 @@
 
 Použití (z kořene projektu):
   soal_zoomify.py <cesta nebo adresa> <zmenseni> <vystup.jpg>
-    cesta     = SOA Litoměřice: část adresy obrázku za „…/CZ-214000010/matriky/“ (konec typicky „….jpg“), vezmi ji jednou
+    (SOA Litoměřice koncem října 2026 změnil cesty na …/CZ-214000010/NAD-<číslo>/dao/images/… – dávej celou adresu)
+    cesta     = starší adresy SOA Litoměřice: část adresy obrázku za „…/CZ-214000010/matriky/“, vezmi ji jednou
                 z prohlížeče: v digitální badatelně otevři snímek a v síťovém provozu najdi požadavek na
                 https://images.soalitomerice.cz/ximage/matriky/zoomify/cz/archives/CZ-214000010/matriky/<cesta>/ImageProperties.xml
                 (další snímky téže knihy mají stejnou cestu, liší se jen číslem obrázku)
@@ -16,6 +17,7 @@ neomezuje).
 """
 import glob, math, os, re, shutil, subprocess, sys, tempfile, time, urllib.parse, urllib.request
 import concurrent.futures as cf
+import os as _os, sys as _sys; _sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__))); import slusne  # noqa: E402 – brzda proti zablokování archivem (společný limit dotazů, tools/slusne.py)
 for _s in (sys.stdout, sys.stderr):   # UTF-8 výstup i na Windows bez -X utf8 (cp1250 neumí třeba „→“)
     if hasattr(_s, "reconfigure"):
         _s.reconfigure(encoding="utf-8", errors="replace")

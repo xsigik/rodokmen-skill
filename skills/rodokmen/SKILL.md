@@ -36,6 +36,9 @@ Najdeš v ní `tools/` (nástroje), `template/` (šablona projektu a webu) a `re
    **Codex:** stojí-li v tvých pokynech k sandboxu, že je síť omezená („Network access is restricted“), nástroje
    na archivy půjdou jen se schválením každého příkazu. Už v prvním shrnutí nabídni povolení sítě pro projekt
    (Fáze 0, krok 3); když už `.codex/config.toml` existuje, chybí restart Codexu ve složce projektu nebo důvěra ke složce.
+   Aktualizace z verze starší než 0.6.0 přidá brzdu proti zablokování archivem: zeptej se i na hlídač sítě (viz Fáze 0,
+   krok 2). Po aktualizaci řekni uživateli, ať pro jistotu restartuje Claude Code / Codex / OMP – změny v `.claude/settings.json`
+   (zákaz `curl`, hlídač) se jinak nemusí projevit hned.
 2. Projekt ještě není → **Fáze 0**.
 
 ## Fáze 0 – Příprava (jednou)
@@ -47,6 +50,9 @@ Najdeš v ní `tools/` (nástroje), `template/` (šablona projektu a webu) a `re
    --accept-source-agreements --accept-package-agreements` (balíky `Python.Python.3.12` + `--scope user`,
    `OpenJS.NodeJS.LTS`, `ImageMagick.ImageMagick`, `Git.Git`). Instalace systémových věcí nech uživatele potvrdit;
    interaktivní příkazy mu dej s předponou `!`, ať je spustí sám.
+   **macOS:** ověř https: `python3 -I -c "import urllib.request; urllib.request.urlopen('https://aron.vychodoceskearchivy.cz')"`.
+   Python z python.org po instalaci nemá certifikáty (`CERTIFICATE_VERIFY_FAILED`) – ať uživatel spustí
+   `Install Certificates.command` ve složce `/Applications/Python 3.x/`, nebo použij Python z Homebrew (`/opt/homebrew/bin/python3`).
    **Windows:** `python3` tam bývá jen nefunkční alias z Microsoft Store („Python nebyl nalezen“) – zkontroluj
    `python --version` (případně `py -3 --version`) a ve všech příkazech tohoto skillu místo `python3 -I` používej
    `python -I -X utf8` (funguje-li jen launcher, tak `py -3 -I -X utf8`). Zkontroluj **který** Python to je
@@ -61,10 +67,21 @@ Najdeš v ní `tools/` (nástroje), `template/` (šablona projektu a webu) a `re
    přes Git Bash (`bash tools/…`). Delší jednorázové skripty v Pythonu nepiš jako heredoc (`python - <<EOF`), v Git Bash
    občas spadnou na „unexpected EOF“ – zapiš je do souboru v `pracovni/` a spusť. Tato pravidla zapiš hned po založení projektu do jeho `AGENTS.md`, ať platí i příště
    (a dej je do zadání i pomocníkům, viz `reference/matriky.md`).
+   **Prohlížeč pro Clauda** potřebuješ pro archivy, které nástroje nepouštějí (SOA Praha, MZA Brno, SOA Třeboň, ZA Opava,
+   hledání v SOA Litoměřice). Když předci žili tam a nemáš nástroje `mcp__…playwright…`, nabídni doplněk
+   Playwright: `/plugin install playwright@claude-plugins-official` (dej ho uživateli s `!` jako
+   `claude plugin install playwright@claude-plugins-official`), pak restart Claude Code. Jinou možností je Claude
+   in Chrome (`/chrome`), postupy v `portaly.md` jsou ale vyzkoušené s Playwrightem (snímek obrazovky do souboru).
+   Bez prohlížeče ať uživatel posílá snímky obrazovky.
 2. Zeptej se, kde má projekt být (navrhni `~/Rodokmen`), a založ ho:
    `python3 -I SKILL_DIR/tools/novy_projekt.py <složka>`
    Chce-li uživatel nejdřív vidět, jak web vypadá, založ vedle ukázku: `… novy_projekt.py ~/Rodokmen-ukazka --ukazka`,
    pak `cd web && npm install && npm run nahled` a pošli mu odkaz http://localhost:4321.
+   Pak se zeptej, jestli zapnout **hlídač sítě** (`… novy_projekt.py <složka> --hlidac`, vypnutí `--bez-hlidace`).
+   Vysvětli jednou větou: archivy blokují IP adresu po sérii rychlých dotazů. Hlídač je malý skript v projektu
+   (`tools/hlidac_site.py`), který před každým příkazem zkontroluje, že stahování jde přes brzdu, a jinak ho zamítne.
+   Sám nic nestahuje. Bez něj platí jen pravidla níže a zákaz přímého `curl`/`wget` v `.claude/settings.json`.
+   Hlídač i zákaz jsou nastavení Claude Code; v Codexu a OMP se na ně nespoléhej a stahuj vždy přes brzdu.
 3. V projektu `git init` a první uložení (git = historie změn, kdyby se něco pokazilo). Doporuč pokračovat v Claude Code,
    Codexu nebo OMP **z této složky** (soubor `AGENTS.md` v ní zajistí, že příště navážeš).
    **Codex** má v sandboxu ve výchozím stavu vypnutou síť, nástroje ale stahují z archivů – uživatel by schvaloval každé
@@ -117,10 +134,11 @@ Základní smyčka pro každou osobu:
 2. **Ověř přístupnost**: matriky jsou v archivu až po uplynutí lhůty od *posledního* zápisu ve svazku
    (narození 100 let, sňatky 75, úmrtí 30). Mladší údaje jsou na matričním úřadě (žádost s doložením příbuzenství) –
    zapiš do `data/archivni_dotazy.md` a jdi dál.
-3. **Najdi svazek**: podle obce → farnost → archiv. ARON: `python3 -I tools/aron_search.py "Obec"`, SOA Třeboň:
-   `tools/trebon.py`, SOA Plzeň: `tools/portafontium.py`, SOA Praha (střední Čechy): `tools/ebadatelna.py`,
-   Praha: `tools/ahmp_search.sh`; ostatní a Rakousko viz `reference/portaly.md`. Slovenské a uherské matriky: FamilySearch
-   podle `reference/portaly.md`, „FamilySearch v Chromu uživatele“. Sňatek hledej nejdřív ve farnosti nevěsty.
+3. **Najdi svazek**: podle obce → farnost → archiv. ARON: `python3 -I tools/aron_search.py "Obec"`, SOA Plzeň:
+   `tools/portafontium.py`, Praha: `tools/ahmp_search.sh`;
+   SOA Praha (střední Čechy), MZA Brno a SOA Třeboň jen v prohlížeči, ostatní a Rakousko viz `reference/portaly.md`.
+   Slovenské a uherské matriky: FamilySearch podle `reference/portaly.md`, „FamilySearch v Chromu uživatele“.
+   Sňatek hledej nejdřív ve farnosti nevěsty.
    Je-li ke svazku index (rejstřík), začni jím. Starší matriky (před ~1784) bývají ve faře sousedního města.
 4. **Stáhni snímek** do `pracovni/<svazek>/` a nech ho tam – před dalším stažením se podívej, jestli ho už nemáš
    (šetří čas, archiv i CAPTCHY). Najdi zápis, **přečti ho sám ze snímku** (přiblíž si výřez v plném rozlišení).
@@ -132,6 +150,7 @@ Základní smyčka pro každou osobu:
    4. rámeček čteného místa: `python3 -I tools/ramecek.py <klíč> x0,y0,x1,y1` (zlomky výřezu `vyrezy/<klíč>.jpg`, ne snímku) a **prohlédni si** `pracovni/ramecek_<klíč>.jpg`,
    5. přepis originálu a český překlad do `data/prepisy.json` (nejistá místa „(?)“, nečitelná „[…]“),
    6. osobu/osoby do `data/osoby.py` (`f` fakta, `r` klíč zápisu, `st="doc"`), sourozence a kmotry-příbuzné do `SIDE`.
+   Nová obec předků → `tools/mista.py pridej "Obec"` (mapa), nový pradědeček nebo prababička (8–15) → rod do `LINES`.
 6. **Zapiš hledání do deníku** `data/research_log.md` – i neúspěšné, s rozsahem (které roky / snímky jsi prošel);
    o rozvržení knihy stačí odkaz na `orientace` svazku.
    Narazíš-li po cestě na **zjevně související výskyt** (vzácné příjmení rodu, stejný dům, jméno z rodinného
@@ -160,6 +179,30 @@ Pravidla, která chrání kvalitu (naučená na skutečném projektu):
   kde uživatel u každého klikne na odpověď. Když to jde, použij artefakt s ukládáním odpovědí, jinak HTML soubor
   s tlačítkem „stáhnout odpovědi“. Odpovědi pak zapracuj a zapiš do deníku.
 
+### Šetrně k archivům – brzda `tools/slusne.py`
+Archivy blokují IP adresu po sérii rychlých dotazů (MZA i celou síť na hodiny, ZA Opava na 30 minut). Blokaci
+nezpůsobují nástroje, ale rychlé dočasné skripty a smyčky `curl`. Nástroje v `tools/` mají brzdu samy: společný limit
+pro každý web (dotaz 1 za 2 s, obrázky 10 za s) pro všechny procesy na počítači.
+- **Síť jen přes brzdu, i u pomocníků:** vlastní skript `python3 -I tools/slusne.py pracovni/x.py …`, curl
+  `python3 -I tools/slusne.py curl …`, shellový skript `python3 -I tools/slusne.py bash pracovni/x.sh`. Přímé
+  `curl`/`wget` má projekt zakázané (`.claude/settings.json`); i místní náhled webu zkoušej přes `slusne.py curl`.
+- **Hláška „slusne: … je zastavený“ (kód 3)** = archiv dal najevo, že ho zatěžujeme (429/503/403, stránka
+  „zablokováno“, spojení odmítnuto). Nezkoušej to znovu, neobcházej to (jiný nástroj, prohlížeč), řekni to uživateli
+  a dělej jinou práci. Stav: `slusne.py stav`. `slusne.py odblokuj` jen když víš, že šlo o tvou chybu (špatná adresa).
+- **V prohlížeči brzda neplatí, hlídáš se sám:** při cíleném hledání (konkrétní snímek, rejstřík) aspoň 5 s mezi
+  stránkami, při listování stránku po stránce 10 s. Na jednom archivu jen jeden prohlížeč, žádní pomocníci, žádné
+  smyčky `fetch` ani `Promise.all`.
+- **Archiv může zablokovat i prohlížeč** (403 po stovkách snímků za den). Když se snímek nenačte nebo stránka hlásí
+  chybu, podívej se do síťových požadavků (`browser_network_requests`). Při 403, 429 nebo 503 hned skonči, zapiš to
+  brzdě (`python3 -I tools/slusne.py zastav <web> "HTTP 403 v prohlížeči"` – zastaví i skripty a pomocníky), řekni to
+  uživateli a na tom archivu ten den už nepokračuj.
+- **Když nejde ani prohlížeč:** ať uživatel snímek otevře sám, uloží snímek obrazovky (nebo export snímku, má-li ho
+  portál) do `pracovni/` a pošle adresu stránky – z ní je kniha a číslo snímku pro `odkaz`.
+- **Na jeden archiv nejvýš jeden pomocník.** Víc projektů na jednom počítači má jednu IP adresu.
+- **Mezipaměť obrázků:** co se stáhne přes brzdu (snímky, dlaždice), uloží se a příště se vezme z disku
+  (`tools/cache.py`, společná pro všechny projekty). Snímky eBadatelny ukládej z prohlížeče (`portaly.md`).
+  Kolik stažení z archivu ušetřila, ukáže `python3 -I tools/cache.py stav` (stažené vs. vzaté z disku, po webech).
+
 ### Pomocníci (subagenti) – šetrně
 Na velké kolo (např. „projdi 5 svazků a najdi všechny Nováky“) můžeš pustit 2–4 pomocníky paralelně.
 Zadání pro pomocníka sestav podle `reference/zadani_pomocnika.md`.
@@ -176,7 +219,8 @@ model mu nastaví uživatel v `/agents`, nabídni mu to): hledání a první čt
 kreditů. Ověření na snímku a zápis do dat dělá hlavní model (ty). Uživateli to řekni, ať ví, proč kredity tolik neubývají.
 Osvědčilo se 3–4 pomocníci na různé větve a archivy současně, jedno kolo ≈ 15–25 nových předků.
 Pomocníci stojí hodně kreditů – před velkým kolem řekni uživateli, co plánuješ a proč, a nech si to schválit.
-Do zadání jim napiš technické pasti z `reference/matriky.md` (macOS: zsh; Windows: `python -I -X utf8`, `magick`).
+Do zadání jim napiš technické pasti z `reference/matriky.md` (macOS: zsh; Windows: `python -I -X utf8`, `magick`)
+a pravidla brzdy výše (síť jen přes `tools/slusne.py`, při hlášce „zastavený“ skončit a ohlásit).
 **V zadání chtěj u každého prošlého snímku, co na něm skutečně přečetl** (rok, první jméno), ne jen „prošel jsem
 sn. 20–40“ – pomocník jinak přehlédne, že se mu část snímků nenačetla. Na špatně čitelné knihy (kurent 1. poloviny
 19. století, vybledlé snímky) pomocníky nepouštěj, nebo jim dej přesný snímek; ARON a Porta fontium zvládají dobře.
@@ -237,6 +281,7 @@ Nedělej to pořád. Postup:
 - Nestahuj hromadně z placených služeb (MyHeritage, Ancestry, Geni…) a neobcházej jejich ochranu –
   automatické procházení stovek záznamů vede k **zablokování účtu**. Čti jen to, co uživatel otevře, nebo co potřebuješ jednotlivě.
 - Nezadávej za uživatele hesla, platební údaje, neřeš CAPTCHA, nekupuj předplatné.
+- Neobcházej brzdu `tools/slusne.py` ani blokaci archivu.
 - Nedávej na web podrobnosti o žijících lidech bez jejich souhlasu.
 - Nepřepisuj data bez zálohy v gitu; po větším kroku navrhni uložení (`git add -A && git commit -m "…"`).
 
@@ -261,9 +306,10 @@ Nedělej to pořád. Postup:
 |---|---|
 | `aron_search.py "Obec"` | najde svazky matrik na ARON (SOA Zámrsk); `"Obec,Fara"` zúží stejnojmenné obce |
 | `aron_img.py <apu> info / <snímek> 1 pracovni/x.jpg / link <n> / svazek` | stáhne snímek, dá odkaz, zapíše svazek |
-| `trebon.py misto / svazky / rejstrik / snimek / svazek` | matriky SOA Třeboň (jižní Čechy) bez prohlížeče, i rejstříky |
+| `trebon.py …` | matriky SOA Třeboň – zatím vypnuto (archiv nástroj od 2. 11. 2026 odmítá), čti v prohlížeči (`portaly.md`) |
 | `portafontium.py fara / scitani / domy / info / snimek / link / svazek` | matriky (i okresní civilní a Standesamt 1938–45) a sčítání lidu 1857–1921 po domech SOA Plzeň (západní Čechy, Porta fontium) bez prohlížeče (faru zjisti na portálu) |
-| `ebadatelna.py hledat / matriky / info / snimek / link / svazek`, `a-…` | matriky a archiválie (urbáře, gruntovní knihy) SOA Praha (střední Čechy) |
+| `ebadatelna.py link / a-link`, `snimek / a-snimek` | trvalý odkaz; náhled a výřez ze snímku uloženého z prohlížeče – stahovat nástroj nesmí (archiv od 2. 11. 2026 zakazuje), postup v `portaly.md` |
+| `cache.py stav / najdi <adresa> / uloz <soubor.json>`, `--nahled x.jpg` | sdílená mezipaměť obrázků (ukládá ji brzda sama); uložení snímku eBadatelny z prohlížeče, rovnou s náhledem 1600 px |
 | `ahmp_search.sh "dotaz"`, `ahmp_scan.py XID snímek out.jpg` | matriky Prahy (AHMP) |
 | `policie_prihlasky.py Příjmení [Jméno] [od] [do]`, `karta <pořadí> out.jpg …` | pražské policejní přihlášky 1850–1914 (rodiny s dětmi a adresami), stažení karty |
 | `soal_zoomify.py <cesta nebo adresa> 0 out.jpg` | snímek SOA Litoměřice nebo ZA Opava (knihu najdi v prohlížeči; pozor na blokování) |
@@ -271,8 +317,8 @@ Nedělej to pořád. Postup:
 | `anno.py`, `anno_snap.py`, `kramerius.py` | noviny: ANNO (rakouské), Kramerius (české) |
 | `ged_import.py strom.ged "Jméno"` | předci z rodinného stromu (GEDCOM) + fronta zápisů |
 | `ftb_export.py strom.ftb out.ged ["Jméno" rok linie.md [Photos/]]` | záloha z MyHeritage (.ftb) → GEDCOM + přímá linie s původem údajů |
+| `mapa_knihy.py aron/pf/ahmp <kniha> <od> <do> [krok]`, `--vedle --ostre --vyrez …`, `soubory …` | mapa knihy (horní pruhy snímků pod sebou) a montáž sloupce se jmény vedle sebe – orientace v knihách po vsích (`matriky.md`) |
 | `overit.py <snímek> x0,y0,x1,y1 <prefix> [--vylepsit]` | zápis na dvě čitelné poloviny – ověření čtení (souřadnice = zlomky 0–1; `--vylepsit` = vybledlý snímek) |
-| `nahledy.py <pf\|ebad\|trebon> <kniha> <od> <do> [x0,y0,x1,y1]` | mřížka náhledů (3 snímky v obrázku, s číslem snímku) – procházení knihy bez rejstříku |
 | `pasy.py <složka> <snímky…> --kniha <id> [--strany 1]` | síto Jev (jen OMP) pro celou knihu bez rejstříku: snímky na pásy, jedna složka = jedna kniha; postup `reference/sito_jev.md` |
 | `sito.py stav\|mrizka <složka pásů> <hledání>` | síto Jev: modul pro OMP `eval` (kalibrace, prosetí s kontrolou modelu a úplnosti); z příkazové řádky stav a mřížka označených pásů |
 | `napady.py` | náměty na zajímavosti z dat |
@@ -280,6 +326,7 @@ Nedělej to pořád. Postup:
 | `ramecek.py <klíč> x0,y0,x1,y1` | rámeček čteného místa + kontrolní obrázek |
 | `mista.py pridej "Obec"` / `mista.py` | místa pro mapu (souřadnice z OpenStreetMap) |
 | `zapis.py <soubor> <klíč> <vstup.json> [--sloucit]` | přidá / změní položku v `zaznamy`, `svazky`, `prepisy`… beze změny formátu |
+| `slusne.py <skript.py> / curl … / bash x.sh / stav` | brzda proti zablokování archivem – vlastní skripty a curl spouštěj přes ni |
 | `kontrola.py` | kontrola dat; hlásí i nefunkční odkazy v textech, stupeň příbuzenství, citlivé údaje na webu a kdy psát příběh |
 | `export_web.py` | data → web (volá ho `npm run data`) |
 | `fan_chart.py vystupy/` | vějíř předků jako plakát k tisku |

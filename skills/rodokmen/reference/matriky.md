@@ -32,15 +32,16 @@ Mladší knihy jsou na matričním úřadě obce s rozšířenou působností / 
    Posun „snímek – strana“ se v knize mění (vložené listy, chybějící strany) – přečti číslo strany na náhledu a dopočítej.
    U starých far se vyplatí nejdřív najít **souhrnný index** přes víc desetiletí (např. N/O/Z 1636–1746) – dovede
    rychle až do 17. století. Rejstříky bývají podle **německého pravopisu**: česká jména na O a V hledej i pod W
-   (Otava = Wotawa, Vávra = Wawra). Knihy pro více obcí bývají řazené po obcích, rejstřík na konci.
+   (Otava = Wotawa, Vávra = Wawra). Knihy pro více obcí bývají řazené po obcích, rejstřík na konci (viz níže).
    Velké fary mají rejstříky i jako **samostatné svazky** (např. rejstřík oddaných přes 300 let) – hledej je nejdřív.
    **Když matrika chybí** (není online nebo se nedochovala), zkus rejstřík – bývá vedený zvlášť a přežil i tam, kde kniha
    ne. Zápis v rejstříku dokládá datum, místo a otce; zapiš ho jako `prob` (opis, ne originál) a matriku zkus později.
-4. **Bez indexu: listuj chronologicky.** Odhadni pozici podle let na prvních a posledních snímcích svazku (půlení intervalu).
+4. **Bez indexu: listuj chronologicky** – ale nejdřív ověř, že kniha není řazená po vsích (níže). Odhadni pozici podle let na prvních a posledních snímcích svazku (půlení intervalu).
    Staré knihy svázané z **ročních výtahů** (Extractus, Consignatio, 18. stol.) nemusí jít po sobě a ročníky chybí;
    rok bývá jen v nadpisu výtahu. Než napíšeš „zápis tam není“, ověř hlavičky ročníků.
-   Rozsah snímků projdeš rychleji v mřížce: `python3 -I tools/nahledy.py <pf|ebad|trebon> <kniha> <od> <do> [x0,y0,x1,y1]`
-   (výřez např. jen sloupec data, domu a jména `0,0,0.5,1`; víc snímků v jednom obrázku, číslo snímku v rohu).
+   Rozsah snímků projdeš rychleji v montáži: `python3 -I tools/mapa_knihy.py aron|pf|ahmp <kniha> <od> <do> [krok]
+   --vyrez x0,y0,x1,y1` (výřez např. jen sloupec data, domu a jména `0,0,0.5,1`; víc snímků v jednom obrázku s číslem
+   snímku; postup níže, „Knihy řazené po vsích“, body 3–4).
    **Síto Jev (jen OMP):** knihu nebo dlouhý rozsah, který bys stejně četl celý, nejdřív protřiď a čti jen označené
    pásy – `reference/sito_jev.md`.
    **Nejisté datum** (číslice z pozdější poznámky): nejdřív projdi všechny možné roky v domovské farnosti, teprve pak
@@ -51,8 +52,33 @@ Mladší knihy jsou na matričním úřadě obce s rozšířenou působností / 
 7. **Rodina v katolické matrice chybí? Zkus evangelickou nebo židovskou.** Po toleranci (1781) vedly vlastní matriky
    evangelické sbory (a. v. i h. v.), jeden sbor pokrýval desítky obcí; v ARONu mají signatury „R …“ a `aron_search.py`
    je najde podle obce. Ve východních Čechách časté (Rychnovsko, Dobrušsko, Opočensko). Židovské matriky viz `portaly.md`.
-   Ve 20. století (1920–1945) zkus i **civilní matriky** lidí bez vyznání u okresních úřadů (SOA Třeboň a SOA Plzeň,
-   viz `portaly.md`).
+   Ve 20. století (1920–1945) zkus i **civilní matriky** lidí bez vyznání u okresních úřadů (vyzkoušeno v SOA Třeboň
+   a SOA Plzeň, viz `portaly.md`).
+   **Smíšená manželství:** od roku 1868 šli synové po otci a dcery po matce, pokud se rodiče nedohodli jinak.
+   Před rokem 1868 byly při katolickém otci katolické všechny děti. Dceru evangelíka a katoličky proto hledej
+   nejdřív v katolické matrice, syna v evangelické.
+
+## Knihy řazené po vsích (časté 1784–1900, všechny archivy)
+Venkovské fary vedly knihu často **po vsích**: každá ves má vlastní oddíl s vlastním stránkováním (foliací) a roky běží
+jen uvnitř oddílu. Oddíly nejdou podle let, pokračují vzadu („ad pag. 70“, „vide reliquos pag.“) a oddíl jedné vsi bývá
+až na konci knihy. Odhad snímku podle roku pak selže a „zápis tam není“ bývá omyl (skutečné chyby: prošel se jen oddíl
+vsi a sňatek byl v oddílu městyse; ves měla oddíl až na snímcích 380–405).
+1. **Popis knihy první:** eBadatelna „Obecný popis“ (rozvržení stran po vsích), MZA „Části matriky“, ARON „územní
+   rozsah“, Porta fontium `info`. Přechody vsí mezi farami mívají mezery – zápis z mezery hledej v obou farách.
+2. **Rejstřík fary:** uvádí ves (písmenem nebo „tom“ = kniha vsi, ne pořadí svazku) a **stranu uvnitř oddílu**, ne celé
+   knihy. Snímek ≈ začátek oddílu + strana/2 (folio/2), dolaď podle čísla na snímku. Uvnitř písmene jde rejstřík podle let.
+   Klíč písmeno/tom → ves zjistíš ze záhlaví stránek; sestav si tabulku do deníku.
+3. **Mapa knihy:** z každého 5.–30. snímku jen horní pruh (název vsi, rok) v malém rozlišení, slepit pod sebe s číslem
+   snímku → stavba celé knihy na jednom obrázku: `python3 -I tools/mapa_knihy.py aron|pf|ahmp <kniha> <od> <do> [krok]`
+   (u archivů jen v prohlížeči z uložených snímků obrazovky: `mapa_knihy.py soubory pracovni/x_*.png`). Pak v plném
+   rozlišení jen oddíl hledané vsi. Mapu oddílů zapiš do deníku.
+4. **Montáž sloupců:** uvnitř oddílu vyřízni sloupec se jmény (ženich/nevěsta, dítě, ves na okraji – aspoň 35 % šířky
+   strany, užší usekne jména) ze 4–8 snímků a slep vedle sebe (`mapa_knihy.py … <od> <do> 1 --vedle --ostre --vyrez
+   x0,y0,x1,y1`); celý zápis čti jen u kandidátů. U vybledlých knih se
+   zápisy snadno přehlédnou – tam raději celé strany.
+5. **Pasti:** sňatek bývá v oddílu vsi nevěsty, ale některé fary řadily podle ženicha (Držkov); starší knihy mají
+   narozené, oddané a zemřelé proložené a bez obsahu; čísla stran v samostatném rejstříku nemusí sedět se stránkováním
+   knihy. Než napíšeš „nenalezeno“, zmapuj **všechny** oddíly.
 
 ## Čtení písma
 - Kurentový rejstřík: stáhni plné rozlišení a rozřež stránku na čtvrtiny (sloupec jmen + data),
@@ -113,6 +139,10 @@ Mladší knihy jsou na matričním úřadě obce s rozšířenou působností / 
 - 7ber/7bris = září, 8ber = říjen, 9ber = listopad, Xber = prosinec (ne 7. a 8. měsíc).
 - Písař spletl jméno dědečka (Josef místo Václava) – rozhodne více zápisů téže rodiny.
 - Dítě zapsané pod jiným křestním jménem, než jakým ho volala rodina (Františka → v rodině Anna).
+- Předek v dospělosti „Jan“ byl pokřtěn jako Václav: starší Václav zemřel a mladší dítě dostalo jeho jméno, v dospělosti
+  ho volali jinak. V rejstříku proto hledej **všechny děti rodičů** (podle příjmení a domu), ne jen hledané jméno.
+- Rejstřík ukazuje „špatné“ křestní jméno ve správné rodině nebo domě? Otevři zápis – písař mohl jméno v matrice
+  opravit (přeškrtnuté Jan → František) a do rejstříku se opsalo to původní.
 - Sňatek pár měsíců před porodem nebo po něm – není chyba, jen „svatba na poslední chvíli“; zajímavost pro web.
 - Nemanželské dítě nese příjmení matky; otec chybí nebo je dopsán později (legitimace na okraji).
 - Stejný předek dvakrát v rodokmenu (vzdálení příbuzní se vzali) – v datech `SAME`.

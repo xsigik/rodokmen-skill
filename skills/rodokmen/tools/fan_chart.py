@@ -80,6 +80,21 @@ def gen(k):
     return k.bit_length() - 1
 
 
+# Předek v rodokmenu vícekrát (SAME = {alias: hlavní číslo}): na místě aliasu kresli hlavní osobu i celou její větev
+# předků (alias << d | (k − (hlavní << d))), jinak by sektory nad aliasem zůstaly prázdné (#31).
+SAME = ns.get("SAME", {})
+VLASTNI = set(P) - set(SAME)   # osoby bez zrcadlených kopií – pro statistiku
+for _a, _c in sorted(SAME.items()):
+    for _k in sorted(P):
+        _d = gen(_k) - gen(_c)
+        if _d >= 0 and _k >> _d == _c:
+            _t = (_a << _d) | (_k - (_c << _d))
+            if _d == 0 or _t not in P:
+                P[_t] = P[_k]
+            if _k in HREFS:
+                HREFS.setdefault(_t, HREFS[_k])
+
+
 def angles(k):
     g = gen(k); n = 2 ** g; i = k - n
     span = 360 / n
@@ -181,7 +196,7 @@ for k in slots:
             texts.append(f'<g {tw}><text y="{f1 * 0.35:.1f}" text-anchor="middle" font-size="{f1:.1f}" font-weight="600" {style}>{html.escape(name)}</text></g>')
 
 # statistics
-known = [k for k, p in P.items() if k > 1 and not p["n"].startswith("otec neuveden")]
+known = [k for k in VLASTNI if k > 1 and not P[k]["n"].startswith("otec neuveden")]
 doc = [k for k in known if P[k].get("st") == "doc"]
 zpath = os.path.join(ROOT, "data", "zaznamy.json")
 recs = json.load(open(zpath, encoding="utf-8")) if os.path.exists(zpath) else []
@@ -193,7 +208,26 @@ title = (f'<text x="{W / 2}" y="250" text-anchor="middle" font-family="Georgia, 
 lx, ly = 300, CY + 2240 + 170
 legend = []
 items = [(k, LINES[k][0]) for k in range(8, 16) if k in LINES]
-desc = {k: (LINES[k][1].split(";")[0].split(".")[0])[:70] for k, _ in items}
+
+
+def popis_rodu(text, jmeno):
+    """První věta popisu rodu, zkrácená na celé slovo, aby se vešla do sloupce legendy.
+    Tečka končí větu jen před velkým písmenem nebo na konci a po slově s aspoň 4 znaky – „čp. 41“, „roz. Nová“,
+    „sv. Jan“ ani „19. století“ větu neukončí."""
+    t = text.split(";")[0].strip()
+    for m in re.finditer(r"\.(\s+|$)", t):
+        za, pred = t[m.end():m.end() + 1], t[:m.start()].split()[-1:]
+        if (not za or za.isupper()) and pred and len(pred[0]) >= 4:
+            t = t[:m.start()]
+            break
+    t = t.rstrip(". ")
+    limit = max(30, 84 - len(jmeno))   # sloupec legendy pojme asi 85 znaků písmem 40 px
+    if len(t) > limit:
+        t = t[:limit].rsplit(" ", 1)[0].rstrip(",;:–- ") + "…"
+    return t
+
+
+desc = {k: popis_rodu(LINES[k][1], nm) for k, nm in items}
 for idx, (k, nm) in enumerate(items):
     col, row = idx // 4, idx % 4
     x, y = lx + col * 1950, ly + row * 78
@@ -232,10 +266,13 @@ if not CHROME:
     sys.exit(0)
 prof = tempfile.mkdtemp(prefix="fanchart-")
 before = os.path.getmtime(png_path) if os.path.exists(png_path) else 0
-subprocess.run([CHROME, "--headless=new", "--disable-gpu", "--hide-scrollbars", f"--user-data-dir={prof}",
-                "--force-device-scale-factor=1", f"--window-size={W},{H}", f"--screenshot={png_path}",
-                __import__("pathlib").Path(html_path).as_uri()], check=True, capture_output=True, timeout=120)
+try:   # velký plakát na pomalejším stroji: Chrome PNG dopíše, ale skončí až po limitu – rozhoduje, zda PNG vznikl
+    subprocess.run([CHROME, "--headless=new", "--disable-gpu", "--hide-scrollbars", f"--user-data-dir={prof}",
+                    "--force-device-scale-factor=1", f"--window-size={W},{H}", f"--screenshot={png_path}",
+                    __import__("pathlib").Path(html_path).as_uri()], check=True, capture_output=True, timeout=300)
+except subprocess.TimeoutExpired:
+    pass
 shutil.rmtree(prof, ignore_errors=True)
 if not os.path.exists(png_path) or os.path.getmtime(png_path) <= before:
-    sys.exit("PNG se nevygeneroval (Chrome)")
+    sys.exit(f"PNG se nevygeneroval (Chrome) – plakát je v {html_path}, otevřete ho v prohlížeči a vytiskněte do PDF")
 print(png_path, len(known), "předků", len(doc), "doc", len(recs), "zápisů", maxg + 1, "generací")
