@@ -72,6 +72,7 @@ Najdeš v ní `tools/` (nástroje), `template/` (šablona projektu a webu) a `re
    Playwright: `/plugin install playwright@claude-plugins-official` (dej ho uživateli s `!` jako
    `claude plugin install playwright@claude-plugins-official`), pak restart Claude Code. Jinou možností je Claude
    in Chrome (`/chrome`), postupy v `portaly.md` jsou ale vyzkoušené s Playwrightem (snímek obrazovky do souboru).
+   V OMP je prohlížeč vestavěný (`browser` přes `eval`, `headed: true`), doplněk Playwright tam není potřeba.
    Bez prohlížeče ať uživatel posílá snímky obrazovky.
 2. Zeptej se, kde má projekt být (navrhni `~/Rodokmen`), a založ ho:
    `python3 -I SKILL_DIR/tools/novy_projekt.py <složka>`

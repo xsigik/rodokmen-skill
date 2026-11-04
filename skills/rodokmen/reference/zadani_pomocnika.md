@@ -8,7 +8,7 @@ končilo po 1–2 nálezech a pomocníka bylo nutné několikrát posílat „po
   ho přetíží – rozlož je mezi archivy.
 - **Orientaci v knize udělej sám:** najdi knihu, rejstřík a přepočet snímek ↔ folio (pagina), ověř ho na jednom
   snímku a pomocníkovi dej **uzavřený seznam snímků**. Výchozí bod je pole `orientace` svazku v `data/svazky.json`;
-  co ověříš nově, doplň tam (svazek nejdřív zapiš nástrojem `… svazek`, ten vypíše klíč). Pomocník, který hledá,
+  co ověříš nově, doplň tam (jak, viz `reference/data.md`, `svazky.json` → `orientace`). Pomocník, který hledá,
   kde kniha začíná, spotřebuje většinu běhu na orientaci. Pozor: „fol.“ v rejstříku bývá pagina.
 - **Kontrolní zápis:** vyber jeden zápis ze stejné knihy, který už máš doložený (osoba, datum, snímek). Pomocník ho
   musí najít jako první – tím ověříš, že čte správnou knihu a že mu snímky jdou.

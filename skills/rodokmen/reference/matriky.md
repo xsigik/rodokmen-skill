@@ -39,9 +39,9 @@ Mladší knihy jsou na matričním úřadě obce s rozšířenou působností / 
 4. **Bez indexu: listuj chronologicky** – ale nejdřív ověř, že kniha není řazená po vsích (níže). Odhadni pozici podle let na prvních a posledních snímcích svazku (půlení intervalu).
    Staré knihy svázané z **ročních výtahů** (Extractus, Consignatio, 18. stol.) nemusí jít po sobě a ročníky chybí;
    rok bývá jen v nadpisu výtahu. Než napíšeš „zápis tam není“, ověř hlavičky ročníků.
-   Rozsah snímků projdeš rychleji v montáži: `python3 -I tools/mapa_knihy.py aron|pf|ahmp <kniha> <od> <do> [krok]
-   --vyrez x0,y0,x1,y1` (výřez např. jen sloupec data, domu a jména `0,0,0.5,1`; víc snímků v jednom obrázku s číslem
-   snímku; postup níže, „Knihy řazené po vsích“, body 3–4).
+   Rozsah snímků projdeš rychleji v montáži: `python3 -I tools/mapa_knihy.py aron|pf|ahmp <kniha> <od> <do> 1 --vedle
+   --vyrez x0,y0,x1,y1` (krok 1 = každý snímek; výřez např. jen sloupec data, domu a jména `0,0,0.5,1`; nejvýš 60 snímků
+   na jedno spuštění; postup níže, „Knihy řazené po vsích“, bod 4).
    **Síto Jev (jen OMP):** knihu nebo dlouhý rozsah, který bys stejně četl celý, nejdřív protřiď a čti jen označené
    pásy – `reference/sito_jev.md`.
    **Nejisté datum** (číslice z pozdější poznámky): nejdřív projdi všechny možné roky v domovské farnosti, teprve pak
@@ -67,11 +67,11 @@ vsi a sňatek byl v oddílu městyse; ves měla oddíl až na snímcích 380–4
    rozsah“, Porta fontium `info`. Přechody vsí mezi farami mívají mezery – zápis z mezery hledej v obou farách.
 2. **Rejstřík fary:** uvádí ves (písmenem nebo „tom“ = kniha vsi, ne pořadí svazku) a **stranu uvnitř oddílu**, ne celé
    knihy. Snímek ≈ začátek oddílu + strana/2 (folio/2), dolaď podle čísla na snímku. Uvnitř písmene jde rejstřík podle let.
-   Klíč písmeno/tom → ves zjistíš ze záhlaví stránek; sestav si tabulku do deníku.
+   Klíč písmeno/tom → ves zjistíš ze záhlaví stránek; tabulku zapiš do `orientace` svazku (`reference/data.md`).
 3. **Mapa knihy:** z každého 5.–30. snímku jen horní pruh (název vsi, rok) v malém rozlišení, slepit pod sebe s číslem
    snímku → stavba celé knihy na jednom obrázku: `python3 -I tools/mapa_knihy.py aron|pf|ahmp <kniha> <od> <do> [krok]`
    (u archivů jen v prohlížeči z uložených snímků obrazovky: `mapa_knihy.py soubory pracovni/x_*.png`). Pak v plném
-   rozlišení jen oddíl hledané vsi. Mapu oddílů zapiš do deníku.
+   rozlišení jen oddíl hledané vsi. Mapu oddílů zapiš do `orientace` svazku, do deníku jen odkaz na ni.
 4. **Montáž sloupců:** uvnitř oddílu vyřízni sloupec se jmény (ženich/nevěsta, dítě, ves na okraji – aspoň 35 % šířky
    strany, užší usekne jména) ze 4–8 snímků a slep vedle sebe (`mapa_knihy.py … <od> <do> 1 --vedle --ostre --vyrez
    x0,y0,x1,y1`); celý zápis čti jen u kandidátů. U vybledlých knih se
