@@ -33,7 +33,6 @@ def kontrola(P, SAME=None, zaznamy=(), prepisy=None, ukazka=(), mista=None):
         zapis(os.path.join(tmp, "data", "prepisy.json"), json.dumps(prepisy or {}, ensure_ascii=False))
         os.makedirs(os.path.join(tmp, "tools"))
         shutil.copy(KONTROLA, os.path.join(tmp, "tools", "kontrola.py"))
-        shutil.copy(os.path.join(os.path.dirname(KONTROLA), "export_web.py"), os.path.join(tmp, "tools"))   # kontrola odkazů
         r = subprocess.run(PY + [os.path.join(tmp, "tools", "kontrola.py")], capture_output=True, text=True,
                            encoding="utf-8")
         return (f"NÁVRATOVÝ KÓD {r.returncode}\n" if r.returncode else "") + r.stdout + r.stderr

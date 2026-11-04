@@ -261,8 +261,9 @@ def main():
             warn.append(f"rod {jmeno} má už {n} generací – je čas napsat příběh rodu "
                         f"(data/pribeh.md, reference/pribehy.md); koncept nejdřív ukaž uživateli v chatu")
 
-    if not err:   # exportér potřebuje platná čísla osob, aliasy a odkazy na svazky
-        check = subprocess.run([sys.executable, "-I", "-X", "utf8", os.path.join(ROOT, "tools", "export_web.py"),
+    exporter = os.path.join(ROOT, "tools", "export_web.py")
+    if not err and os.path.exists(exporter):   # exportér potřebuje platná čísla osob, aliasy a odkazy na svazky
+        check = subprocess.run([sys.executable, "-I", "-X", "utf8", exporter,
                                 "--kontrola-odkazu"], capture_output=True, text=True, encoding="utf-8")
         if check.returncode:
             err.append("kontrola odkazů selhala: " + (check.stderr or check.stdout).strip())

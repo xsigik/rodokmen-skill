@@ -39,7 +39,7 @@ Najdeš v ní `tools/` (nástroje), `template/` (šablona projektu a webu) a `re
    (Fáze 0, krok 3); když už `.codex/config.toml` existuje, chybí restart Codexu ve složce projektu nebo důvěra ke složce.
    Aktualizace projektu, který ještě nemá `tools/slusne.py` (verze starší než 0.6.0, ve forku starší než 0.8.0-xsigik),
    přidá brzdu proti zablokování archivem: zeptej se i na hlídač sítě (viz Fáze 0,
-   krok 2). Po aktualizaci řekni uživateli, ať pro jistotu restartuje Claude Code / Codex / OMP – změny v `.claude/settings.json`
+   krok 2). Po aktualizaci řekni uživateli, ať pro jistotu restartuje Claude Code – změny v `.claude/settings.json`
    (zákaz `curl`, hlídač) se jinak nemusí projevit hned.
 2. Projekt ještě není → **Fáze 0**.
 
@@ -244,7 +244,7 @@ Podrobně `reference/pribehy.md`. Tohle je to, co rodina na webu čte nejradši,
 
 ## Fáze 4 – Web
 Podrobně `reference/web.md`. **Vlastní přání k webu a k polím osob (např. čtivý text o osobě) řeš jen přes rozšiřující body
-(`reference/web.md`, „Vlastní doplňky“), nikdy úpravou `tools/` ani souborů šablony `web/` – aktualizace skillu je přepíše.** Ve zkratce:
+(`reference/web.md`, „Vlastní doplňky“), nikdy úpravou `tools/` ani souborů šablony `web/` – aktualizace by je musela slučovat a může skončit konfliktem.** Ve zkratce:
 1. `cd web && npm install` (jednou), pak `npm run nahled` → http://localhost:4321 – ukaž uživateli. V cloudovém prostředí
    (claude.ai) localhost neuvidí – pošli mu snímky stránek (headless prohlížeč) nebo nasaď náhled.
 2. Nastav `data/web.json`: název, úvod, kontakt a **přihlašovací otázku a odpověď** (web je jen pro rodinu).
@@ -301,7 +301,7 @@ Nedělej to pořád. Postup:
 | `vyrezy/`, `zdroje/` | výřezy zápisů a dokumentů (web / plné rozlišení), název = klíč + `.jpg` |
 | `dokumenty/`, `pracovni/` | originály od rodiny; pracovní soubory (nejdou na web) |
 | `poznamky_pro_skill.md` | poznámky pro správce skillu (chyby, nové archivy, nápady) – posílá je uživatel ručně |
-| `tools/` | nástroje (kopie ze skillu, **needitovat** – aktualizace je přepíše; vlastní věci patří do `web/src/local/`; aktualizace celého projektu: znovu spustit `novy_projekt.py` na stejnou složku, viz `reference/web.md`) |
+| `tools/` | nástroje (kopie ze skillu, **needitovat** – aktualizace by úpravy musela slučovat; vlastní věci patří do `web/src/local/`; aktualizace celého projektu: znovu spustit `novy_projekt.py` na stejnou složku, viz `reference/web.md`) |
 | `web/` | web (Astro); data do něj jdou jen přes `npm run data` |
 
 ## Nástroje (`tools/`, spouštět z kořene projektu `python3 -I tools/<nástroj>`)

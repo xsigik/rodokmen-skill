@@ -67,7 +67,8 @@ Další aktualizace = jen `npm run nasadit`. Vlastní doménu lze nastavit v adm
 
 ## Vlastní doplňky stránky osoby (bez zásahu do skillu)
 Chce-li uživatel k osobám něco, co skill nezná (např. čtivý text, rodinná anekdota), **neupravuj `tools/` ani soubory
-ze šablony webu** – aktualizace skillu je přepíše. Použij dva rozšiřující body:
+ze šablony webu** – každou aktualizaci by bylo potřeba s takovou úpravou slučovat a může skončit konfliktem, který se
+řeší s uživatelem. Použij dva rozšiřující body:
 1. **Pole osoby v `data/osoby.py`:** jakékoli jméno pole mimo `n y st f r note sex` (např. `o="text"`) projde na web jako
    `p.extra.<pole>`; textová pole hlídá i `kontrola.py` (citlivá slova).
 2. **Komponenta v `web/src/local/osoba/*.astro`:** každý takový soubor se vloží na stránku osoby nad fakta a dostane `p`.
