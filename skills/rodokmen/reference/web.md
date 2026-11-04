@@ -67,7 +67,8 @@ Další aktualizace = jen `npm run nasadit`. Vlastní doménu lze nastavit v adm
 
 ## Vlastní doplňky stránky osoby (bez zásahu do skillu)
 Chce-li uživatel k osobám něco, co skill nezná (např. čtivý text, rodinná anekdota), **neupravuj `tools/` ani soubory
-ze šablony webu** – aktualizace skillu je přepíše. Použij dva rozšiřující body:
+ze šablony webu** – každou aktualizaci by bylo potřeba s takovou úpravou slučovat a může skončit konfliktem, který se
+řeší s uživatelem. Použij dva rozšiřující body:
 1. **Pole osoby v `data/osoby.py`:** jakékoli jméno pole mimo `n y st f r note sex` (např. `o="text"`) projde na web jako
    `p.extra.<pole>`; textová pole hlídá i `kontrola.py` (citlivá slova).
 2. **Komponenta v `web/src/local/osoba/*.astro`:** každý takový soubor se vloží na stránku osoby nad fakta a dostane `p`.
@@ -102,7 +103,37 @@ a po úpravě zkontroluj web na mobilu i počítači.
 `python3 -I tools/fan_chart.py vystupy/` → SVG a HTML (a PNG, je-li nainstalovaný Google Chrome, na Windows i Microsoft Edge) k tisku.
 
 ## Aktualizace staršího projektu
-Znovu spusť `python3 -I SKILL_DIR/tools/novy_projekt.py <složka projektu>`. Data (`data/`, výřezy) zůstanou, `tools/` se přepíše
-a soubory ve `web/`, které se liší od nové šablony, taky – staré verze uloží do `pracovni/zaloha_web_<datum>/` a vypíše jejich seznam.
-Upravoval-li jsi s uživatelem vzhled (styly, stránky), převezmi úpravy ze zálohy (porovnej soubory) a ověř web. Pak ve `web/`
-`npm install` a `npm run data`. Starou šablonu přihlášení `export_web.py` odmítne s výzvou k aktualizaci.
+Znovu spusť `python3 -I SKILL_DIR/tools/novy_projekt.py <složka projektu>`. Data (`data/`, výřezy) zůstanou. Projekt má
+v `.skill_sablona/` kopii šablony `web/` a `tools/`, ze které vznikl (commitovat s projektem), a skript podle ní rozhodne
+o každém souboru a vypíše seznam:
+- **Přepsáno**: soubor projekt neupravoval, nahradila ho nová verze.
+- **Ponecháno**: vlastní úprava, šablona se nezměnila.
+- **Sloučeno**: změnila se úprava i šablona, každá jinde; `git merge-file` je spojil. Ověř, že soubor dává smysl.
+- **Ke kontrole**: úprava i šablona změnily stejná místa, chybí `git`, soubor přidal projekt i nová šablona, nebo ho
+  projekt smazal a šablona změnila. Soubor zůstal, jak byl; nová verze je v `pracovni/zaloha_<datum>/nova_sablona/`
+  (u konfliktu sloučení, kdy je `git`, vedle i návrh se značkami `<<<<<<<` jako `.konflikt`). Převezmi změny šablony
+  ručně a pak spusť `python3 -I SKILL_DIR/tools/novy_projekt.py <složka projektu> --vyreseno web/src/…` (volbu lze
+  opakovat). Jako základ uloží přesně ten návrh, který je v záloze (zapamatovaný v `.skill_sablona/cekajici.json`),
+  takže pozdější změny šablony přijdou při další aktualizaci; soubor v projektu nezmění. Bez záznamu uloží aktuální
+  verzi šablony a řekne to. Do té doby se soubor hlásí při každé aktualizaci. Do ke kontrole patří i složka na místě
+  souboru (nebo naopak) a na Windows a macOS cesty, které se liší jen velikostí písmen; ty skript nezmění.
+- **Smazáno v projektu**: soubor projekt smazal a šablona ho nezměnila, zůstane smazaný.
+- **Šablona už nemá**: soubor zůstal (skript nic nemaže) a hlásí se při každé aktualizaci. Zkontroluj, jestli ho web
+  ještě potřebuje; případně ho smaž ručně a spusť `--vyreseno` s jeho cestou.
+- **Přepsáno, původní verze v záloze**: projekt ze starší verze bez `.skill_sablona/`. Upravené soubory nahradila nová
+  verze a původní jsou v `pracovni/zaloha_<datum>/puvodni/`; vlastní úpravy z nich převezmi (porovnej soubory).
+
+Odkaz (symlink, junction) ve `web/`, `tools/`, `.skill_sablona/` nebo `pracovni/`, který vede mimo projekt, a odkaz
+nebo složku na místě zálohy skript odmítne s hláškou POZOR a soubory za nimi přeskočí (bez zálohy nic nepřepíše).
+
+`web/package-lock.json` (mění ho `npm install`) se neslučuje: změnila-li ho šablona, vezme se nový a starý jde do zálohy.
+
+**Po aktualizaci projdi výpis s uživatelem** (skript řeší jen mechanické případy):
+1. **Ke kontrole:** porovnej, co změnila šablona (`.skill_sablona/<soubor>` proti `nova_sablona/<soubor>` v záloze)
+   a co projekt (`.skill_sablona/<soubor>` proti souboru v projektu). Uživateli řekni jednou dvěma větami, co je nového
+   a co je jeho úprava, navrhni sloučení a po souhlasu ho udělej a spusť `--vyreseno`.
+2. **Přepsáno, původní verze v záloze:** porovnej `puvodni/<soubor>` s novou verzí. Jsou-li v ní vlastní úpravy
+   (ne jen starší stav šablony), nabídni jejich převzetí do nové verze.
+3. **Sloučeno:** prohlédni výsledek (`git diff`), jestli dává smysl.
+4. Ve `web/` `npm install`, `npm run data` a `npm run build`, pak `python3 -I tools/kontrola.py`.
+Starou šablonu přihlášení `export_web.py` odmítne s výzvou k aktualizaci.

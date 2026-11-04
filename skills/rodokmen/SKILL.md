@@ -31,13 +31,15 @@ Najdeš v ní `tools/` (nástroje), `template/` (šablona projektu a webu) a `re
    a pokračuj podle sekce „Rozpracováno“. Krátce uživateli shrň, kde jste skončili.
    **Verze:** porovnej soubor `.skill_verze` v projektu se `SKILL_DIR/VERZE`. Chybí-li, nebo se liší, řekni jednou větou,
    že je nová verze skillu, a nabídni aktualizaci projektu: `python3 -I SKILL_DIR/tools/novy_projekt.py <složka projektu>`
-   (data zůstanou, změněné soubory webu se zazálohují do `pracovni/`), pak ve `web/` `npm install`. Po souhlasu ji udělej
-   a podle výpisu převezmi ze zálohy případné úpravy vzhledu (viz `reference/web.md`). Odmítne-li, připomeň to až příště.
+   (data zůstanou, vlastní úpravy webu a `tools/` se sloučí s novou šablonou), pak ve `web/` `npm install`. Po souhlasu
+   ji udělej a výpis projdi s uživatelem: u souborů ke kontrole a zálohovaných úprav porovnej, co změnila šablona
+   a co uživatel, navrhni sloučení a po souhlasu ho udělej (postup `reference/web.md`). Odmítne-li, připomeň to až příště.
    **Codex:** stojí-li v tvých pokynech k sandboxu, že je síť omezená („Network access is restricted“), nástroje
    na archivy půjdou jen se schválením každého příkazu. Už v prvním shrnutí nabídni povolení sítě pro projekt
    (Fáze 0, krok 3); když už `.codex/config.toml` existuje, chybí restart Codexu ve složce projektu nebo důvěra ke složce.
-   Aktualizace z verze starší než 0.6.0 přidá brzdu proti zablokování archivem: zeptej se i na hlídač sítě (viz Fáze 0,
-   krok 2). Po aktualizaci řekni uživateli, ať pro jistotu restartuje Claude Code / Codex / OMP – změny v `.claude/settings.json`
+   Aktualizace projektu, který ještě nemá `tools/slusne.py` (verze starší než 0.6.0, ve forku starší než 0.8.0-xsigik),
+   přidá brzdu proti zablokování archivem: zeptej se i na hlídač sítě (viz Fáze 0,
+   krok 2). Po aktualizaci řekni uživateli, ať pro jistotu restartuje Claude Code – změny v `.claude/settings.json`
    (zákaz `curl`, hlídač) se jinak nemusí projevit hned.
 2. Projekt ještě není → **Fáze 0**.
 
@@ -242,7 +244,7 @@ Podrobně `reference/pribehy.md`. Tohle je to, co rodina na webu čte nejradši,
 
 ## Fáze 4 – Web
 Podrobně `reference/web.md`. **Vlastní přání k webu a k polím osob (např. čtivý text o osobě) řeš jen přes rozšiřující body
-(`reference/web.md`, „Vlastní doplňky“), nikdy úpravou `tools/` ani souborů šablony `web/` – aktualizace skillu je přepíše.** Ve zkratce:
+(`reference/web.md`, „Vlastní doplňky“), nikdy úpravou `tools/` ani souborů šablony `web/` – aktualizace by je musela slučovat a může skončit konfliktem.** Ve zkratce:
 1. `cd web && npm install` (jednou), pak `npm run nahled` → http://localhost:4321 – ukaž uživateli. V cloudovém prostředí
    (claude.ai) localhost neuvidí – pošli mu snímky stránek (headless prohlížeč) nebo nasaď náhled.
 2. Nastav `data/web.json`: název, úvod, kontakt a **přihlašovací otázku a odpověď** (web je jen pro rodinu).
@@ -299,7 +301,7 @@ Nedělej to pořád. Postup:
 | `vyrezy/`, `zdroje/` | výřezy zápisů a dokumentů (web / plné rozlišení), název = klíč + `.jpg` |
 | `dokumenty/`, `pracovni/` | originály od rodiny; pracovní soubory (nejdou na web) |
 | `poznamky_pro_skill.md` | poznámky pro správce skillu (chyby, nové archivy, nápady) – posílá je uživatel ručně |
-| `tools/` | nástroje (kopie ze skillu, **needitovat** – aktualizace je přepíše; vlastní věci patří do `web/src/local/`; aktualizace celého projektu: znovu spustit `novy_projekt.py` na stejnou složku, viz `reference/web.md`) |
+| `tools/` | nástroje (kopie ze skillu, **needitovat** – aktualizace by úpravy musela slučovat; vlastní věci patří do `web/src/local/`; aktualizace celého projektu: znovu spustit `novy_projekt.py` na stejnou složku, viz `reference/web.md`) |
 | `web/` | web (Astro); data do něj jdou jen přes `npm run data` |
 
 ## Nástroje (`tools/`, spouštět z kořene projektu `python3 -I tools/<nástroj>`)
@@ -307,7 +309,6 @@ Nedělej to pořád. Postup:
 |---|---|
 | `aron_search.py "Obec"` | najde svazky matrik na ARON (SOA Zámrsk); `"Obec,Fara"` zúží stejnojmenné obce |
 | `aron_img.py <apu> info / <snímek> 1 pracovni/x.jpg / link <n> / svazek` | stáhne snímek, dá odkaz, zapíše svazek |
-| `trebon.py …` | matriky SOA Třeboň – zatím vypnuto (archiv nástroj od 2. 11. 2026 odmítá), čti v prohlížeči (`portaly.md`) |
 | `portafontium.py fara / scitani / domy / info / snimek / link / svazek` | matriky (i okresní civilní a Standesamt 1938–45) a sčítání lidu 1857–1921 po domech SOA Plzeň (západní Čechy, Porta fontium) bez prohlížeče (faru zjisti na portálu) |
 | `ebadatelna.py link / a-link`, `snimek / a-snimek` | trvalý odkaz; náhled a výřez ze snímku uloženého z prohlížeče – stahovat nástroj nesmí (archiv od 2. 11. 2026 zakazuje), postup v `portaly.md` |
 | `cache.py stav / najdi <adresa> / uloz <soubor.json>`, `--nahled x.jpg` | sdílená mezipaměť obrázků (ukládá ji brzda sama); uložení snímku eBadatelny z prohlížeče, rovnou s náhledem 1600 px |
