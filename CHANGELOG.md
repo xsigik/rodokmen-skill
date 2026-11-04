@@ -6,9 +6,9 @@ dá v repozitáři **Watch → Custom → Releases**.
 
 Projekt založený starší verzí Claude sám nabídne aktualizovat (pozná to podle souboru `VERZE`).
 
-## 0.8.0-xsigik – 4. 11. 2026
+## 0.8.1-xsigik – 4. 11. 2026
 
-Fork xsigik/rodokmen-skill postavený na původní verzi 0.7.0 (sekce níže). Oproti ní má navíc:
+Fork xsigik/rodokmen-skill postavený na původní verzi 0.8.0 (sekce níže). Oproti ní má navíc:
 
 **Nové**
 - Codex a OMP: instalace, pokyny pro agenta v `AGENTS.md` (starý `CLAUDE.md` projektu se přejmenuje).
@@ -16,14 +16,48 @@ Fork xsigik/rodokmen-skill postavený na původní verzi 0.7.0 (sekce níže). O
   označené pásy (`reference/sito_jev.md`, #21, #23).
 - Porta fontium: sčítání lidu 1857–1921 po domech (`scitani`, `domy`), okresní civilní matriky a Standesamt 1938–1945
   (#13).
-- `overit.py` a `vyrez.py --vylepsit` pro vybledlé snímky; `aron_img.py` ořízne výřez přesně na zadanou oblast (#9).
+- `overit.py` a `vyrez.py --vylepsit` pro vybledlé snímky; `aron_img.py` při náhradním stahování po dlaždicích ořízne
+  výřez přesně na zadanou oblast (#9).
 - `kontrola.py` hlásí nefunkční odkazy v textech webu; vlastní pole osob (`p.extra`, `web/src/local`).
+
+**Opravy**
+- Při aktualizaci projektu forku bez brzdy (starší než 0.8.0-xsigik) se agent zeptá i na hlídač sítě.
 
 **Návody**
 - Šablona zadání pro pomocníky (`reference/zadani_pomocnika.md`) a pole `orientace` u svazků (#5, #6).
 - FamilySearch v Chromu uživatele (Claude in Chrome, OMP přes relay) pro slovenské a uherské matriky (#8, #17).
 - Těšínsko: ZA Opava, evangelické sbory, polská a slovenská strana, 1939–1945 (#14).
 - Místo `nahledy.py` je `mapa_knihy.py` z původního skillu.
+
+## 0.8.0 – 4. 11. 2026
+
+Bezpečná aktualizace projektu (vlastní úpravy zůstanou), rychlé stahování z ARONu a přesnější kontrola dat.
+
+**Nové**
+- Aktualizace projektu už nepřepisuje vlastní úpravy webu a nástrojů. Projekt si pamatuje šablonu, ze které vznikl,
+  a při aktualizaci každý soubor buď přepíše (neupravený), nechá (šablona se nezměnila), nebo sloučí obě změny.
+  Kde to nejde, nechá soubor beze změny a Claude s vámi projde, co je nového a co je vaše úprava. Projekt ze starší
+  verze se při první aktualizaci přepíše jako dřív, ale původní soubory (nově i `tools/`) zůstanou v záloze
+  v `pracovni/` (#79, PR #88).
+- ARON: snímek se stahuje celý jedním požadavkem (jako tlačítko „stáhnout“) místo desítek dlaždic. Stránka, která
+  trvala minuty, je tu za sekundu, v plném rozlišení přesně původní sken. Zmenšení a výřez se dělají z disku a další
+  výřezy téže stránky už archiv nezatěžují.
+- `kontrola.py` hlásí sňatek, který nejmenuje partnera z rodokmenu (druhý sňatek vdovce u první ženy), a číslo domu,
+  které žádný citovaný zápis nedokládá (#80, PR #86). U předků bez obce na mapě ukáže slova, která vypadají jako obec
+  (#81).
+
+**Opravy**
+- `mista.py` hledá jen sídla – už nenajde bar nebo kadeřnictví stejného jména – a varuje, když je nové místo přes
+  50 km od ostatních (stejnojmenná obec jinde) (#81, PR #85).
+- Mezipaměť obrázků ukládá jen celé obrázky: přerušené stažení se neuloží a zkrácený snímek se stáhne znovu.
+- Aktualizace projektu neslučuje `package-lock.json`, vezme nový.
+
+**Návody**
+- SOA Třeboň: nástroj `trebon.py` je na žádost archivu odstraněn (licence DigiArchivu nepovoluje stahování
+  snímků skripty, #91). Matriky se čtou v prohlížeči jako dosud.
+
+Aktualizaci projektu napsal pavelzbornik (PR #88), stejně jako opravu `mista.py` (PR #85) a nové kontroly
+(PR #86). Děkuji i všem, kdo poslali zkušenosti e-mailem.
 
 ## 0.7.0 – 3. 11. 2026
 
