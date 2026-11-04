@@ -6,7 +6,7 @@ dá v repozitáři **Watch → Custom → Releases**.
 
 Projekt založený starší verzí Claude sám nabídne aktualizovat (pozná to podle souboru `VERZE`).
 
-## 0.7.5-xsigik – 4. 11. 2026
+## 0.8.0-xsigik – 4. 11. 2026
 
 Fork xsigik/rodokmen-skill postavený na původní verzi 0.7.0 (sekce níže). Oproti ní má navíc:
 
