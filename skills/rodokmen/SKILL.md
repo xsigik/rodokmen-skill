@@ -36,7 +36,8 @@ Najdeš v ní `tools/` (nástroje), `template/` (šablona projektu a webu) a `re
    **Codex:** stojí-li v tvých pokynech k sandboxu, že je síť omezená („Network access is restricted“), nástroje
    na archivy půjdou jen se schválením každého příkazu. Už v prvním shrnutí nabídni povolení sítě pro projekt
    (Fáze 0, krok 3); když už `.codex/config.toml` existuje, chybí restart Codexu ve složce projektu nebo důvěra ke složce.
-   Aktualizace z verze starší než 0.6.0 přidá brzdu proti zablokování archivem: zeptej se i na hlídač sítě (viz Fáze 0,
+   Aktualizace projektu, který ještě nemá `tools/slusne.py` (verze starší než 0.6.0, ve forku starší než 0.8.0-xsigik),
+   přidá brzdu proti zablokování archivem: zeptej se i na hlídač sítě (viz Fáze 0,
    krok 2). Po aktualizaci řekni uživateli, ať pro jistotu restartuje Claude Code / Codex / OMP – změny v `.claude/settings.json`
    (zákaz `curl`, hlídač) se jinak nemusí projevit hned.
 2. Projekt ještě není → **Fáze 0**.
