@@ -32,7 +32,7 @@ P = {
   Názvy obcí ve faktech používá mapa (`mista.json` → `re`).
 - `r` klíče zápisů ze `zaznamy.json`. `st` viz `matriky.md`: `doc` přečteno v matrice, `prob` pravděpodobné,
   `fam` od rodiny (i strom, který si rodina vede sama, např. GEDCOM z jejího MyHeritage), `mh` cizí strom z internetu, `unk`.
-- `LINES = {8: ("Novákové", "Kováři z Holic…"), …}` – jen čísla 8–15; název rodu = příjmení v množném čísle.
+- `LINES = {8: ("Novákové", "Kováři z Holic…"), …}` – jen čísla 8–15; název rodu = příjmení v množném čísle. Vyplň hned, jak znáš pradědečka nebo prababičku – bez LINES web neukáže rody a nepřijde rada k příběhu.
 - `SIDE` – sourozenci a další příbuzní: `dict(k=<číslo předka>, n="Josef Novák (1865–1920)", t="text", r=[klíče])`.
 - `ISSUES` – dvojice `("Otázka", "Vyřešeno: … / Hypotéza: … / Otevřené: …")` → stránka „Co hledáme“ (vyřešené se skryjí).
   Jde na web – nepiš sem citlivé věci (příčiny úmrtí, rodinné spory) bez souhlasu.
@@ -60,7 +60,8 @@ P = {
   Cheznovice fol. 290–338; snímek ≈ fol + 3 (ověřeno fol. 290–338); rejstřík na konci po písmenech, H = sn. 355–356,
   uvnitř po letech"`. Posun snímek ↔ folio se v knize mění (`reference/matriky.md`, bod 3) – každý zapiš s rozsahem,
   kde jsi ho ověřil.
-  Je to jediné místo pravdy o rozvržení: svazek nejdřív zapiš nástrojem `… svazek` (vypíše klíč), pak doplň
+  Je to jediné místo pravdy o rozvržení: svazek nejdřív zapiš nástrojem `… svazek` (vypíše klíč; u archivů jen
+  v prohlížeči – SOA Praha, SOA Třeboň, MZA – ručně podle `portaly.md`, Ostatní portály, krok 4), pak doplň
   `zapis.py svazky <klíč> pracovni/x.json --sloucit` (v `x.json` jen `{"orientace": "…"}`); deník na ně odkazuje.
   Opakovaný `… svazek` orientaci nechá.
 

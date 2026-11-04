@@ -4,7 +4,7 @@
 („je na tomto výřezu křest, kde je otcem Jan Kufa?“). Je to **síto**: ukáže pásy, které stojí za přečtení. Čtení,
 přepis a zápis do dat děláš ty nebo pomocník, jako u každé jiné knihy. V OMP je zabudovaný jako `judge_batch()`
 v `eval`; nástroj `tools/sito.py` je modul pro `eval`, který ho volá a hlídá model, úplnost a kalibraci. V Claude Code
-a Codexu knihu čti jako dosud (`nahledy.py`, pomocníci).
+a Codexu knihu čti jako dosud (`mapa_knihy.py`, pomocníci).
 
 Síto vidí jen to, na co se ptáš: vedlejší nálezy (příbuzný o řádek vedle, svědek) přehlédne. Hodí se na velké cizí
 knihy (nemocnice, ústavy, města), kde hledáš jednu osobu; farnost, kde žila celá rodina, raději čti pomocníkem.

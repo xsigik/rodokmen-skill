@@ -19,5 +19,6 @@ if not (0<=x0<x1<=1 and 0<=y0<y1<=1): sys.exit(f'Oblast {box} musí být zlomky 
 # překryv polovin 8 % oblasti (ne celé stránky – u úzkého výřezu by byl jinak větší než výřez)
 if mode=='v': ym=(y0+y1)/2; p=0.08*(y1-y0); parts=[(x0,y0,x1,ym+p),(x0,ym-p,x1,y1)]
 else: xm=(x0+x1)/2; p=0.08*(x1-x0); parts=[(x0,y0,xm+p,y1),(xm-p,y0,x1,y1)]
+os.makedirs(os.path.dirname(os.path.abspath(pre)),exist_ok=True)  # výstupní složka (pracovni/overeni/…) nemusí existovat
 for i,(a,b,c,d) in enumerate(parts):
     o=f'{pre}_{i}.jpg'; subprocess.run([MAGICK,f,'-crop','%dx%d+%d+%d'%((c-a)*W,(d-b)*H,a*W,b*H),'+repage',*(VYLEPSIT if vylepsit else []),'-resize','1900x1900>',o]); print(o)
