@@ -14,7 +14,8 @@ Archivy blokují IP adresu po sérii rychlých dotazů (MZA, ZA Opava…). Nást
                                                                       403/429/503) – zastaví i skripty a nástroje
 
 Pravidla (pro každý web zvlášť, společně pro všechny procesy i projekty na počítači – mají jednu IP adresu):
-  - dotazy (stránky, hledání, API) nejvýš 1 za 2 s (ZA Opava a digi.nacr.cz 1 za 4 s), obrázky a dlaždice nejvýš 10 za s;
+  - dotazy (stránky, hledání, API) nejvýš 1 za 2 s (ZA Opava a digi.nacr.cz 1 za 4 s, Porta fontium 1 za 10 s i snímky),
+    obrázky a dlaždice nejvýš 10 za s;
     omezuje se frekvence, ne souběh (vlákna stahování dlaždic nevadí),
   - po odpovědi 429/503 (u dotazu i 403), po stránce „zablokováno“ nebo po 3 nepovedených spojeních za sebou
     se web zastaví pro všechny procesy a nástroj hned skončí (kód 3). Nic se neopakuje, nic se neobchází.
@@ -25,7 +26,7 @@ Pravidla (pro každý web zvlášť, společně pro všechny procesy i projekty 
     Doména actapublica.eu MZA nepatří – skripty na ni taky ne.
   - SOA Třeboň (digi.ceskearchivy.cz) nástroj od 2. 11. 2026 odmítá: skripty nic, jen prohlížeč.
   - SOA Praha (soapraha.cz, eBadatelna) nástroj od 2. 11. 2026 zakazuje (robots.txt): skripty nic, jen prohlížeč.
-localhost, vlastní web (Netlify), GitHub a npm se nebrzdí. V prohlížeči (Playwright, Claude in Chrome) brzda neplatí –
+localhost, vlastní web (Netlify, Cloudflare), GitHub a npm se nebrzdí. V prohlížeči (Playwright, Claude in Chrome) brzda neplatí –
 tam aspoň 5–10 s mezi stránkami a žádné smyčky fetch / Promise.all (SKILL.md, Šetrně k archivům).
 Stav je v ~/.cache/rodokmen_slusne/ (Windows %LOCALAPPDATA%\\rodokmen_slusne), jen malé soubory JSON.
 """
@@ -39,6 +40,7 @@ LIMITY = {                           # konec názvu webu: (dotaz, obrázek)
     "mza.cz": (4.0, 4.0),            # MZA Brno – skriptem jen hledání knih (ZAKAZ níže), blokuje i za rychlé dotazy na katalog
     "digi.nacr.cz": (4.0, 4.0),      # Národní archiv (policejní přihlášky) – po pár rychlých kartách přiškrcuje podle IP
     "aron.vychodoceskearchivy.cz": (2.0, 2.0),   # ARON: celý sken (2–4 MB) jedním požadavkem; dlaždice imgx.… dál 0,1 s
+    "portafontium.eu": (10.0, 10.0), # SOA Plzeň – robots.txt „Crawl-delay: 10“ (snímek IIIF je jeden požadavek)
 }
 ZAKAZ = {                            # konec názvu webu: (cesty povolené skriptům, hláška pro ostatní)
     suffix: (re.compile(r"/actapublica/matrika/hledani"),
@@ -62,7 +64,7 @@ ZAKAZ["soapraha.cz"] = (            # SOA Praha (eBadatelna): od 2. 11. 2026 rob
     "SOA Praha (eBadatelna) od 2. 11. 2026 nástroj rodokmen zakazuje (robots.txt, HTTP 403) – ebadatelna.py ani vlastní "
     "skripty nepoužívej. Matriky čti v prohlížeči eBadatelny: výřez zápisu ze snímku, který prohlížeč načetl, a snímek "
     "obrazovky (reference/portaly.md, SOA Praha). Neobcházej to (jiný User-Agent, nástroj, hlavičky).")
-VOLNE = ("localhost", "127.0.0.1", "::1", "0.0.0.0", "netlify.app", "netlify.com", "github.com",
+VOLNE = ("localhost", "127.0.0.1", "::1", "0.0.0.0", "netlify.app", "netlify.com", "workers.dev", "cloudflare.com", "github.com",
          "githubusercontent.com", "npmjs.org", "pypi.org", "pythonhosted.org")
 UA = "Mozilla/5.0 (rodokmen)"           # jak se představuje slusne.py curl (stejně jako nástroje)
 STOPKY = (30 * 60, 2 * 3600, 8 * 3600)   # stopka po 1., 2. a 3. (i každém dalším) odmítnutí webu během OKNO
@@ -403,7 +405,11 @@ def _zapni():
             r, velikost = _odpoved_z_disku(ulozeny)
             _zapocti(_host(self), velikost)
             return r
-        r = get(self)
+        try:
+            r = get(self)
+        except (TimeoutError, socket.timeout) as e:   # spojení vzniklo, ale odpověď nepřišla (archiv „visí“)
+            _spojeni_selhalo(_host(self), e)
+            raise
         host, obr = _host(self), getattr(self, "_slusne_obr", False)
         telo = None
         skupina, _ = _skupina(host)

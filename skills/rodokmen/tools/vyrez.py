@@ -2,11 +2,10 @@
 """Výřez zápisu ze staženého snímku stránky (z jakéhokoli portálu).
 
 Použití:
-  vyrez.py <snimek.jpg> <klic> [x0,y0,x1,y1] [--vylepsit]
+  vyrez.py <snimek.jpg> <klic> [x0,y0,x1,y1] [--kontrast]
       x0..y1 = oblast zápisu jako zlomky šířky a výšky stránky (0..1); bez nich se bere celá stránka.
       Uloží zdroje/<klic>.jpg (plné rozlišení) a vyrezy/<klic>.jpg (zmenšeno na max. 1800 px pro web).
-      --vylepsit = vybledlý snímek: šedá, místní kontrast, doostření – jen ve vyrezy/, zdroje/ zůstane věrný originál
-      (potřebuje ImageMagick 7.0.8 / 6.9.10 nebo novější); v přepisu to poznamenej.
+      --kontrast = vybledlý zápis: šedá škála, papír vybělit a písmo ztmavit (obojí ve zdroje/ i vyrezy/).
 
 Výřez dělejte velkoryse: celý zápis včetně hlavičky sloupců, okrajových poznámek a podpisů.
 Potřebuje ImageMagick (příkaz `magick`).
@@ -17,6 +16,9 @@ for _s in (sys.stdout, sys.stderr):   # UTF-8 výstup i na Windows bez -X utf8 (
         _s.reconfigure(encoding="utf-8", errors="replace")
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# Vybledlé snímky: nejsvětlejších 35 % pixelů (papír) do bílé, nejtmavší 2 % do černé. Řídí se rozložením jasu,
+# takže funguje i vedle tmavých předtištěných linek (pevné -level by tam písmo skoro nezměnilo).
+KONTRAST = ["-colorspace", "Gray", "-contrast-stretch", "2%x35%"]
 
 
 def magick():
@@ -29,12 +31,9 @@ def magick():
     return m
 
 
-VYLEPSIT = ["-colorspace", "Gray", "-clahe", "25x25%+128+4", "-contrast-stretch", "1%x50%", "-level", "5%,70%",
-            "-unsharp", "0x1.2+1.2+0.02"]
-
-
 def main():
-    args = [a for a in sys.argv[1:] if a != "--vylepsit"]
+    kontrast = "--kontrast" in sys.argv
+    args = [a for a in sys.argv[1:] if a != "--kontrast"]
     if len(args) < 2:
         sys.exit(__doc__)
     src, key = args[0], args[1]
@@ -52,10 +51,11 @@ def main():
         w, h = (int(v) for v in subprocess.run([MAGICK, src + "[0]", "-auto-orient", "-format", "%w %h", "info:"],
                                                 capture_output=True, text=True, check=True).stdout.split())
         cmd += ["-crop", f"{round((x1 - x0) * w)}x{round((y1 - y0) * h)}+{round(x0 * w)}+{round(y0 * h)}", "+repage"]
+    if kontrast:
+        cmd += KONTRAST
     subprocess.run(cmd + ["+profile", "!icc,*", "+set", "comment", "-quality", "90", full], check=True)
-    vylepsit = VYLEPSIT if "--vylepsit" in sys.argv else []   # jen web; zdroje/ zůstane věrná kopie snímku
-    subprocess.run([MAGICK, full, *vylepsit, "-resize", "1800x1800>", "-quality", "85", small], check=True)
-    print("uloženo:", full, "a", small)
+    subprocess.run([MAGICK, full, "-resize", "1800x1800>", "-quality", "85", small], check=True)
+    print("uloženo:", full, "a", small, "(zvýšený kontrast – poznamenej to v přepisu)" if kontrast else "")
 
 
 if __name__ == "__main__":

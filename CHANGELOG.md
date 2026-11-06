@@ -6,21 +6,24 @@ dá v repozitáři **Watch → Custom → Releases**.
 
 Projekt založený starší verzí Claude sám nabídne aktualizovat (pozná to podle souboru `VERZE`).
 
-## 0.8.1-xsigik – 4. 11. 2026
+## 0.9.2-xsigik – 6. 11. 2026
 
-Fork xsigik/rodokmen-skill postavený na původní verzi 0.8.0 (sekce níže). Oproti ní má navíc:
+Fork xsigik/rodokmen-skill postavený na původní verzi 0.9.1 (sekce níže). Oproti ní má navíc:
 
 **Nové**
 - Codex a OMP: instalace, pokyny pro agenta v `AGENTS.md` (starý `CLAUDE.md` projektu se přejmenuje).
 - Síto Jev (jen OMP): `pasy.py` a `sito.py` protřídí knihu bez rejstříku levným modelem Jev (TypeSafe), čtou se jen
   označené pásy (`reference/sito_jev.md`, #21, #23).
-- Porta fontium: sčítání lidu 1857–1921 po domech (`scitani`, `domy`), okresní civilní matriky a Standesamt 1938–1945
-  (#13).
-- `overit.py` a `vyrez.py --vylepsit` pro vybledlé snímky; `aron_img.py` při náhradním stahování po dlaždicích ořízne
-  výřez přesně na zadanou oblast (#9).
+- Porta fontium (vedle `obec` z původního skillu): sčítání lidu 1857–1921 po domech (`scitani`, `domy`), okresní
+  civilní matriky a Standesamt 1938–1945 (#13).
+- `aron_img.py` při náhradním stahování po dlaždicích ořízne výřez přesně na zadanou oblast (#9); `overit.py` má
+  překryv polovin úměrný výřezu a zmenšuje na nejvýš 1900 px i na výšku.
 - `kontrola.py` hlásí nefunkční odkazy v textech webu; vlastní pole osob (`p.extra`, `web/src/local`).
 
 **Opravy**
+- Kontrola nové verze (`verze.py`) se ptá na vydání forku (xsigik/rodokmen-skill) a rozumí verzím `-xsigik`;
+  poradí i aktualizaci v OMP a Codexu. Pojistka proti aktualizaci starším skillem počítá s verzemi forku.
+- Vybledlé snímky: místo vlastního `--vylepsit` je `--kontrast` z původního skillu (`vyrez.py`, `overit.py`).
 - Při aktualizaci projektu forku bez brzdy (starší než 0.8.0-xsigik) se agent zeptá i na hlídač sítě.
 
 **Návody**
@@ -28,6 +31,83 @@ Fork xsigik/rodokmen-skill postavený na původní verzi 0.8.0 (sekce níže). O
 - FamilySearch v Chromu uživatele (Claude in Chrome, OMP přes relay) pro slovenské a uherské matriky (#8, #17).
 - Těšínsko: ZA Opava, evangelické sbory, polská a slovenská strana, 1939–1945 (#14).
 - Místo `nahledy.py` je `mapa_knihy.py` z původního skillu.
+
+## 0.9.1 – 6. 11. 2026
+
+**Nové**
+- Kontrola nové verze i proti GitHubu: Claude na začátku konverzace zjistí, jestli nevyšla novější verze, než je
+  nainstalovaná (nejvýš jednou denně), a poradí, jak skill aktualizovat. Dřív to poznal, jen když se kopie skillu
+  aktualizovala sama, a to se u některých instalací děje se zpožděním hodin až dnů (#98).
+
+**Opravy**
+- Aktualizace projektu odmítne starší kopii skillu, než ze které projekt vznikl – projekt se tak nevrátí ke staré verzi.
+
+## 0.9.0 – 6. 11. 2026
+
+Hlavní novinka: **rodinný web se nově zveřejňuje na Cloudflare.** Nasazování i přenos jsou zdarma bez limitu,
+takže web jde aktualizovat kdykoli (bezplatný Netlify vystačí jen na zhruba 20 nasazení měsíčně).
+
+**Nové**
+- **Zveřejnění na Cloudflare (výchozí).** Uživatel si jen založí účet a v prohlížeči klikne na „Allow“, zbytek
+  udělá Claude: navrhne adresu podle rodu (`https://rodokmen.novakovi.workers.dev`), předem ověří, že je volná,
+  a web nasadí příkazem `npm run nasadit-cloudflare`. Rodinná otázka chrání stránky i fotky, kontrola po nasazení
+  počká, až se nová adresa rozšíří, a ověří, že web bez přihlášení ukáže otázku (#50, #67).
+- Kdo má web na Netlify, nic měnit nemusí – `npm run nasadit` funguje dál. Claude teď ale po zveřejnění nenasazuje
+  po každém kole, jen na pokyn nebo jednou na konci sezení, a hlášku „Forbidden“ vysvětlí jako vyčerpané kredity (#54).
+
+**Opravy**
+- Vlastní server (Docker, CapRover): nginx kvůli přihlašovací otázce vůbec nenastartoval (chyba 502), u otevřeného
+  webu padal na dvojí `default`. Image je nově `nginx:stable-alpine` (#56, #61).
+- Odpověď na přihlašovací otázku jen z azbuky nebo symbolů: nasazení teď řekne proč, místo „není odpověď“.
+- Hlavička `SKILL.md` je platný YAML – hlásil ji jako chybnou GitHub i GitHub Copilot (#131).
+- Indikační skici stabilního katastru: v budově je červeně číslo popisné a černě číslo stavební parcely, ne
+  naopak (#132).
+
+**Návody**
+- Vlastní server: úklid starého image po přestavbě, příprava webu bez Node.js, přihlášení jen přes https,
+  za reverse proxy subdoména místo podadresáře.
+
+Děkuji všem, kdo poslali poznámky a opravy – hlavně za zkušenosti s Cloudflare a Dockerem.
+
+## 0.8.2 – 5. 11. 2026
+
+**Opravy**
+- SOA Plzeň (Porta fontium): nástroje se ptají nejvýš jednou za 10 sekund, jak archiv žádá ve svém robots.txt.
+  Stahování je pomalejší, hlavně mapa knihy (#129).
+
+## 0.8.1 – 5. 11. 2026
+
+V dnešním vydání jsem se zaměřil na nejčastěji hlášené problémy a vylepšení.
+
+**Nové**
+- Porta fontium: `portafontium.py obec "<obec>"` vypíše všechny knihy obce seskupené podle fary a seřazené podle let.
+  Je z toho vidět i přechod obce mezi farami a stejnojmenné obce jiných far.
+- FamilySearch: snímek z přihlášeného prohlížeče (Playwright) jde uložit do mezipaměti a do projektu v plném
+  rozlišení (`cache.py uloz`) a dál normálně vyříznout. Nový postup pro **Slovensko**: najít faru v katalogu,
+  zjistit, do kdy jsou knihy natočené (často jen do 1895), a jak pracovat s neúplným indexem.
+- Vybledlé snímky: `vyrez.py` a `overit.py` mají přepínač `--kontrast`. Bledá stránka se už nemá prohlásit za prázdnou.
+- Vojáci 1. světové války: `anno.py --ztraty` hledá jen v rakouských seznamech ztrát (pluk, domovská obec, ročník,
+  raněn/zajat/padl).
+- Netlify: po `npm run nasadit` se web sám otevře bez přihlášení a pozná, jestli ho místo rodinné otázky chrání
+  přihlášení k Netlify (ochrana týmu u nových webů). Vypíše, jak ji vypnout. Ručně `npm run overit`.
+
+**Opravy**
+- Brzda se zastaví i tehdy, když archiv přijme spojení, ale neodpovídá (noční výpadky). Dřív každé volání čekalo
+  přes dvě minuty.
+- `anno.py`: filtr podle listu (`ANNO_TITLE`) vracel vždy 0 výsledků.
+
+**Návody**
+- ZA Opava: detail svazku neotvírat přímou adresou (ukáže jiný svazek), raději trvalým odkazem `permalink?xid`.
+  Vestavěný prohlížeč aplikace Claude archiv odmítne, okno aspoň 1400×900, CAPTCHA řeší uživatel.
+- SOA Litoměřice: hledání přes pole Místo, vyzkoušený úryvek pro adresy snímků, jak poznat blokaci.
+- MZA: sčítací operáty 1857–1921 (jen v prohlížeči). Nástroj na stahování snímků z MZA nebude, archiv to zakázal.
+- Claude in Chrome: výstup JavaScriptu s adresou rozšíření zablokuje – jak to obejít.
+- Svazky „dosud uložené na matričním úřadě“, knihy řazené po vsích (neúplný popis, samostatné knihy vsí, pasti
+  rejstříků) a posun mezi číslem v rejstříku a snímkem.
+- Mapy stabilního katastru: jak se dostat k indikační skice a jak ji číst.
+- Výpadky archivů: co dělat, když archiv večer nebo v noci neodpovídá.
+
+Děkuji všem, kdo poslali zkušenosti e-mailem.
 
 ## 0.8.0 – 4. 11. 2026
 
