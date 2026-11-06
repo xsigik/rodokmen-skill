@@ -1,7 +1,7 @@
 # Co je nového
 
 Změny ve skillu rodokmen, nejnovější verze nahoře. Každá verze má na GitHubu i
-[vydání (Releases)](https://github.com/sarsonj/rodokmen-skill/releases) – kdo chce dostávat upozornění,
+[vydání (Releases)](https://github.com/xsigik/rodokmen-skill/releases) – kdo chce dostávat upozornění,
 dá v repozitáři **Watch → Custom → Releases**.
 
 Projekt založený starší verzí Claude sám nabídne aktualizovat (pozná to podle souboru `VERZE`).
