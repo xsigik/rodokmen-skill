@@ -1,6 +1,10 @@
 ---
 name: rodokmen
-description: Průvodce tvorbou rodokmenu z českých matrik a rodinného webu pro lidi bez zkušeností s genealogií i programováním. Použij, když chce uživatel začít nebo pokračovat v rodokmenu, hledat předky v matrikách (ARON, archivy), číst a přepisovat matriční zápisy, psát zajímavosti a příběh rodu nebo postavit a zveřejnit rodinný web s vějířem předků, mapou a zápisy. Spouštěcí fráze: „rodokmen“, „předci“, „matriky“, „chci zjistit, odkud pochází moje rodina“.
+description: >-
+  Průvodce tvorbou rodokmenu z českých matrik a rodinného webu pro lidi bez zkušeností s genealogií i programováním.
+  Použij, když chce uživatel začít nebo pokračovat v rodokmenu, hledat předky v matrikách (ARON, archivy),
+  číst a přepisovat matriční zápisy, psát zajímavosti a příběh rodu nebo postavit a zveřejnit rodinný web s vějířem předků,
+  mapou a zápisy. Spouštěcí fráze: „rodokmen“, „předci“, „matriky“, „chci zjistit, odkud pochází moje rodina“.
 ---
 
 # Rodokmen z matrik + rodinný web
@@ -29,8 +33,12 @@ Najdeš v ní `tools/` (nástroje), `template/` (šablona projektu a webu) a `re
 ## Na začátku každé konverzace
 1. Jsi ve složce projektu? (`data/STAV.md` existuje.) → Přečti `data/STAV.md`, konec `data/research_log.md`
    a pokračuj podle sekce „Rozpracováno“. Krátce uživateli shrň, kde jste skončili.
-   **Verze:** porovnej soubor `.skill_verze` v projektu se `SKILL_DIR/VERZE`. Chybí-li, nebo se liší, řekni jednou větou,
-   že je nová verze skillu, a nabídni aktualizaci projektu: `python3 -I SKILL_DIR/tools/novy_projekt.py <složka projektu>`
+   **Verze:** spusť `python3 -I SKILL_DIR/tools/verze.py <složka projektu>` (porovná projekt, nainstalovaný skill
+   a nejnovější vydání na GitHubu; GitHubu se ptá nejvýš jednou denně). Podle posledního řádku:
+   `NOVA_VERZE_SKILLU` → řekni jednou větou, že vyšla nová verze, a poraď, jak aktualizovat skill (vypíše jak); projekt
+   aktualizuj až z nového skillu (po restartu), nikdy ne z klonu GitHubu. `PROJEKT_NOVEJSI` → projekt neaktualizuj,
+   jen poraď aktualizovat skill. `AKTUALIZUJ_PROJEKT` → nabídni aktualizaci projektu:
+   `python3 -I SKILL_DIR/tools/novy_projekt.py <složka projektu>`
    (data zůstanou, vlastní úpravy webu a `tools/` se sloučí s novou šablonou), pak ve `web/` `npm install`. Po souhlasu
    ji udělej a výpis projdi s uživatelem: u souborů ke kontrole a zálohovaných úprav porovnej, co změnila šablona
    a co uživatel, navrhni sloučení a po souhlasu ho udělej (postup `reference/web.md`). Odmítne-li, připomeň to až příště.
@@ -138,7 +146,7 @@ Základní smyčka pro každou osobu:
    (narození 100 let, sňatky 75, úmrtí 30). Mladší údaje jsou na matričním úřadě (žádost s doložením příbuzenství) –
    zapiš do `data/archivni_dotazy.md` a jdi dál.
 3. **Najdi svazek**: podle obce → farnost → archiv. ARON: `python3 -I tools/aron_search.py "Obec"`, SOA Plzeň:
-   `tools/portafontium.py`, Praha: `tools/ahmp_search.sh`;
+   `python3 -I tools/portafontium.py obec "Obec"`, Praha: `tools/ahmp_search.sh`;
    SOA Praha (střední Čechy), MZA Brno a SOA Třeboň jen v prohlížeči, ostatní a Rakousko viz `reference/portaly.md`.
    Slovenské a uherské matriky: FamilySearch podle `reference/portaly.md`, „FamilySearch v Chromu uživatele“.
    Sňatek hledej nejdřív ve farnosti nevěsty.
@@ -192,6 +200,9 @@ pro každý web (dotaz 1 za 2 s, obrázky 10 za s) pro všechny procesy na poč�
 - **Hláška „slusne: … je zastavený“ (kód 3)** = archiv dal najevo, že ho zatěžujeme (429/503/403, stránka
   „zablokováno“, spojení odmítnuto). Nezkoušej to znovu, neobcházej to (jiný nástroj, prohlížeč), řekni to uživateli
   a dělej jinou práci. Stav: `slusne.py stav`. `slusne.py odblokuj` jen když víš, že šlo o tvou chybu (špatná adresa).
+- **Výpadky archivů** (večer a v noci – eBadatelna zhruba 22:45–0:45 a kolem 2:00 –, údržba, prošlý certifikát):
+  nástroj hlásí „neodpovídá“ a brzda po 3 neúspěšných spojeních nebo vypršeních za sebou web zastaví. Přepni na jiný
+  archiv nebo jinou práci a zkus to později. Kontrolu certifikátu nikdy nevypínej, na prošlý certifikát jen počkej.
 - **V prohlížeči brzda neplatí, hlídáš se sám:** při cíleném hledání (konkrétní snímek, rejstřík) aspoň 5 s mezi
   stránkami, při listování stránku po stránce 10 s. Na jednom archivu jen jeden prohlížeč, žádní pomocníci, žádné
   smyčky `fetch` ani `Promise.all`.
@@ -257,9 +268,13 @@ Podrobně `reference/web.md`. **Vlastní přání k webu a k polím osob (např.
    co na webu nechat smí, zapiš úryvkem textu do `web.json` → `citlive_schvaleno` (pak se už nehlásí).
 
 ## Fáze 5 – Zveřejnění (volitelné, jen se souhlasem)
-Výchozí cesta je **Netlify** (zdarma): `npm run nasadit`. Přihlášení k Netlify a první propojení webu jsou interaktivní –
-dej je uživateli jako `! npx netlify-cli login` atd. (postup v `reference/web.md`). Pokročilá varianta: vlastní server (Docker/CapRover).
+Výchozí cesta je **Cloudflare** (zdarma, nasazování bez limitu): přihlášení `npx -y wrangler@4 login` (uživatel jen
+klikne v prohlížeči na Allow), název adresy do `web.json` (`cloudflare.nazev`) a `npm run nasadit-cloudflare` – postup
+v `reference/web.md`. Kdo už má web na Netlify, pokračuje `npm run nasadit`. Pokročilá varianta: vlastní server (Docker/CapRover).
 Nic nezveřejňuj bez výslovného souhlasu uživatele.
+Po zveřejnění **nenasazuj po každém kole** (Netlify zdarma vystačí jen na zhruba 20 nasazení měsíčně, u Cloudflare to
+zbytečně zdržuje). Mezi tím obnovuj jen náhled (`npm run data && npm run build`) a nasazuj na pokyn uživatele nebo
+jednou na konci sezení.
 
 ## Poznámky pro správce skillu
 Skill se zlepšuje podle zkušeností lidí, kteří ho používají. Proto **průběžně zapisuj do `poznamky_pro_skill.md`**
@@ -309,22 +324,22 @@ Nedělej to pořád. Postup:
 |---|---|
 | `aron_search.py "Obec"` | najde svazky matrik na ARON (SOA Zámrsk); `"Obec,Fara"` zúží stejnojmenné obce |
 | `aron_img.py <apu> info / <snímek> 1 pracovni/x.jpg / link <n> / svazek` | stáhne snímek, dá odkaz, zapíše svazek |
-| `portafontium.py fara / scitani / domy / info / snimek / link / svazek` | matriky (i okresní civilní a Standesamt 1938–45) a sčítání lidu 1857–1921 po domech SOA Plzeň (západní Čechy, Porta fontium) bez prohlížeče (faru zjisti na portálu) |
+| `portafontium.py obec / fara / scitani / domy / info / snimek / link / svazek` | matriky (i okresní civilní a Standesamt 1938–45) a sčítání lidu 1857–1921 po domech SOA Plzeň (západní Čechy, Porta fontium) bez prohlížeče (`obec` = knihy obce podle far) |
 | `ebadatelna.py link / a-link`, `snimek / a-snimek` | trvalý odkaz; náhled a výřez ze snímku uloženého z prohlížeče – stahovat nástroj nesmí (archiv od 2. 11. 2026 zakazuje), postup v `portaly.md` |
 | `cache.py stav / najdi <adresa> / uloz <soubor.json>`, `--nahled x.jpg` | sdílená mezipaměť obrázků (ukládá ji brzda sama); uložení snímku eBadatelny z prohlížeče, rovnou s náhledem 1600 px |
 | `ahmp_search.sh "dotaz"`, `ahmp_scan.py XID snímek out.jpg` | matriky Prahy (AHMP) |
 | `policie_prihlasky.py Příjmení [Jméno] [od] [do]`, `karta <pořadí> out.jpg …` | pražské policejní přihlášky 1850–1914 (rodiny s dětmi a adresami), stažení karty |
 | `soal_zoomify.py <cesta nebo adresa> 0 out.jpg` | snímek SOA Litoměřice nebo ZA Opava (knihu najdi v prohlížeči; pozor na blokování) |
 | `matricula_dl.sh`, `matricula_batch.sh` | snímky z Matriculy (Rakousko…), URL se bere z prohlížeče |
-| `anno.py`, `anno_snap.py`, `kramerius.py` | noviny: ANNO (rakouské), Kramerius (české) |
+| `anno.py`, `anno_snap.py`, `kramerius.py` | noviny: ANNO (rakouské; `--ztraty` = seznamy ztrát 1914–1919), Kramerius (české) |
 | `ged_import.py strom.ged "Jméno"` | předci z rodinného stromu (GEDCOM) + fronta zápisů |
 | `ftb_export.py strom.ftb out.ged ["Jméno" rok linie.md [Photos/]]` | záloha z MyHeritage (.ftb) → GEDCOM + přímá linie s původem údajů |
 | `mapa_knihy.py aron/pf/ahmp <kniha> <od> <do> [krok]`, `--vedle --ostre --vyrez …`, `soubory …` | mapa knihy (horní pruhy snímků pod sebou) a montáž sloupce se jmény vedle sebe – orientace v knihách po vsích (`matriky.md`) |
-| `overit.py <snímek> x0,y0,x1,y1 <prefix> [--vylepsit]` | zápis na dvě čitelné poloviny – ověření čtení (souřadnice = zlomky 0–1; `--vylepsit` = vybledlý snímek) |
+| `overit.py <snímek> x0,y0,x1,y1 <prefix> [--kontrast]` | zápis na dvě čitelné poloviny – ověření čtení (souřadnice = zlomky 0–1) |
 | `pasy.py <složka> <snímky…> --kniha <id> [--strany 1]` | síto Jev (jen OMP) pro celou knihu bez rejstříku: snímky na pásy, jedna složka = jedna kniha; postup `reference/sito_jev.md` |
 | `sito.py stav\|mrizka <složka pásů> <hledání>` | síto Jev: modul pro OMP `eval` (kalibrace, prosetí s kontrolou modelu a úplnosti); z příkazové řádky stav a mřížka označených pásů |
 | `napady.py` | náměty na zajímavosti z dat |
-| `vyrez.py <stránka.jpg> <klíč> x0,y0,x1,y1 [--vylepsit]` | výřez do `zdroje/` a `vyrezy/` |
+| `vyrez.py <stránka.jpg> <klíč> x0,y0,x1,y1 [--kontrast]` | výřez do `zdroje/` a `vyrezy/` (`--kontrast` u vybledlého písma) |
 | `ramecek.py <klíč> x0,y0,x1,y1` | rámeček čteného místa + kontrolní obrázek |
 | `mista.py pridej "Obec"` / `mista.py` | místa pro mapu (souřadnice z OpenStreetMap) |
 | `zapis.py <soubor> <klíč> <vstup.json> [--sloucit]` | přidá / změní položku v `zaznamy`, `svazky`, `prepisy`… beze změny formátu |

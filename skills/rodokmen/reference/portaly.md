@@ -17,6 +17,14 @@ Matriky jsou online u osmi státních archivů – podle toho, **kde předci ži
 Adresy u nevyzkoušených portálů ověř při prvním použití (portály se mění). Pro pohraničí a mimo ČR viz `playbook.md` §2
 (Matricula pro Rakousko/Německo, Geneteka pro Polsko, FamilySearch pro Slovensko a Uhry) a níže.
 
+**Claude in Chrome – výstup JavaScriptu** (platí pro všechny portály):
+- Výstup, který obsahuje adresu s parametry (`?`, `&`, `=`) nebo dlouhý hex, rozšíření zahodí jako
+  „[BLOCKED: Cookie/query string data]“. Vracej jen cestu (`location.pathname`, `new URL(a.href).pathname`) a hodnoty
+  parametrů zvlášť, případně znaky `?&=` nahraď mezerami; celou adresu slož až v shellu.
+- Výstup se ořízne asi na 1000 znaků (u seznamů asi 30 řádků) – delší seznamy vypisuj po částech (`.slice(0, 25)`, …).
+- Snímky obrazovky na těžkých stránkách padají na timeout; text čti přes `get_page_text` / `read_page` nebo
+  `innerText`.
+
 ## ARON (SOA Zámrsk) – hotové nástroje
 - **Hledání svazků:** `python3 -I tools/aron_search.py "Holice"` → řádky `apu_id | signatura, roky | druh, obce`.
   Popis obsahuje druh knihy (NAROZENÝCH / ODDANÝCH / ZEMŘELÝCH, index) a všechny obce farnosti.
@@ -79,18 +87,20 @@ Adresy u nevyzkoušených portálů ověř při prvním použití (portály se m
   dobrovolnický rejstřík. Dobrá cesta, když farní matrika mlčí. U obce se neukážou (patří okresu) – hledej u okresního města.
 
 ## SOA Plzeň (Porta fontium, portafontium.eu) – `tools/portafontium.py`, bez prohlížeče
-- `portafontium.py fara <fara>` → knihy fary: kniha | obce | roky a druhy (`*` N, `oo` O, `+` Z, `i` index) | popis.
-  `<fara>` je název římskokatolické fary („Dolní Bělá“, „Mýto“ – diakritiku nástroj odstraní) nebo přímo část
-  její adresy (`dolni-bela` =
-  `…/contents/register/soap-pn/cirkev-rimskokatolicka/dolni-bela`). Obec → faru nástroj nehledá: faru zjisti ve vyhledávání
-  matrik na portálu (pole Místo, v prohlížeči) nebo v popisech knih okolních far. Bez prohlížeče: stránka
-  `https://www.portafontium.eu/searching/register?search_api_views_fulltext_1=<obec>` vypíše odkazy
-  `/register/soap-pn/<kniha>` – `<kniha>` (např. `kdyne-29`) rovnou použij v `portafontium.py info`.
+- **Obec → knihy:** `portafontium.py obec "<obec>"` → všechny knihy s obcí v popisu, seskupené podle fary a seřazené podle
+  let (kniha | obce | roky a druhy: `*` N, `oo` O, `+` Z, `i` index | popis). Je z něj vidět i přechod obce mezi farami
+  (Bučí: Dolní Bělá do 1795, Krašovice od 1787) a civilní matriky okresních úřadů. Portál hledá i historické a podobné
+  názvy – stejnojmenné obce jiných far (Bučí × Buč u Komárova) vyřaď podle sloupce obcí. Nic nenalezeno? Zkus jiný tvar
+  (Stajanovice × Stojanovice, německý název) nebo sousední obec.
+- `portafontium.py fara <fara>` → všechny knihy fary ve stejném tvaru. `<fara>` je název („Dolní Bělá“, „Mýto“ –
+  diakritiku nástroj odstraní) nebo část adresy fary (`dolni-bela`); stejnojmenné fary mají příponu okresu
+  (`plana-ps`, `radnice-ro`) – správnou adresu ukáže `obec`.
 - `portafontium.py info <kniha>` (`dolni-bela-17`) → signatura, druh, text desky a **obsah** – u knih psaných po vesnicích
   vypíše, na kterých foliích je která obec („Ves X z let 1862–1901 = fol. 121–200“).
 - `portafontium.py snimek <kniha> <snímek> pracovni/x.jpg [nahled] [x0,y0,x1,y1]` → celá stránka v plném rozlišení jedním
   požadavkem (IIIF), `nahled` = 1/4. Číslo snímku = pořadí náhledu v prohlížeči; soubory nesou číslo folia
   (`dolni-bela-17_0951` = fol. 95), takže u knih se souvislou foliací je **snímek ≈ folio**.
+  Odkaz z cizího rodokmenu (MyHeritage) s `…_0450` v adrese je proto folio 45, ne snímek – stáhni i sousední snímek.
 - `link <kniha> <snímek>` → trvalý odkaz, `svazek <kniha>` → `svazky.json` (klíč `pf_<kniha>`).
 - **Okresní civilní matriky** (lidé bez vyznání a civilní sňatky; většinou 1920–1949, některé knihy od 70. let 19. století;
   okresní úřady Aš, Cheb, Domažlice, Klatovy, Karlovy Vary, Plzeň, Tachov a další): `portafontium.py fara
@@ -108,6 +118,7 @@ Adresy u nevyzkoušených portálů ověř při prvním použití (portály se m
   2. `portafontium.py domy <id>` → `číslo domu:id` pro všechny domy obce a **tentýž dům v ostatních letech** (rok:id).
   3. Id domu je `<kniha>` pro `info`, `snimek`, `link`, `svazek` (klíč `pf_<id>`); arch domu má jen pár snímků.
      Zápis do dat s druhem `S`.
+- **Tempo:** portál žádá 10 s mezi dotazy (robots.txt „Crawl-delay: 10“) – brzda to drží sama, i u snímků.
 - Bez prohlížečového User-Agentu portál vrací 403 (nástroj ho posílá). Jmenné hledání portál nemá – indexy jsou jen uvnitř knih
   (`*i`, `ooi`, `+i` v seznamu knih fary).
 
@@ -127,6 +138,8 @@ Adresy u nevyzkoušených portálů ověř při prvním použití (portály se m
   `…/pages/ArchivaliePage/archivalieId/<id>`) – `document.body.innerText`. „Obecný popis matriky“ uvádí u knih psaných
   po vsích **rozvržení stran** („1–48 Ves A, 49–82 Ves B …“, každá ves může mít vlastní stránkování) – neodhaduj snímek
   podle roku, ale podle stran vsi; je-li rejstřík, začni jím.
+  Archiv popis ořezává asi na 250 znaků (konec rozvržení chybí) – úplný seznam vsí je v poli Lokality, zbytek viz
+  `matriky.md` (Knihy řazené po vsích).
 - Snímek: `https://ebadatelna.soapraha.cz/d/<matrikaId>/<snímek>` (archiválie `/a/<archivalieId>/<snímek>`, zároveň
   trvalý odkaz, do `odkaz`; šipky „<“ a „>“ v prohlížeči na tuto adresu taky přejdou). Prohlížeč načte celý snímek
   v plném rozlišení. **Ulož ho jednou do mezipaměti a dál pracuj z disku** – archiv už nedostane žádný další dotaz.
@@ -150,11 +163,10 @@ Adresy u nevyzkoušených portálů ověř při prvním použití (portály se m
   3. Jiný náhled nebo výřez z uloženého snímku bez sítě: `python3 -I tools/ebadatelna.py snimek <matrikaId> <snímek>
      pracovni/x.jpg [nahled] [x0,y0,x1,y1]` (archiválie `a-snimek`), dál `vyrez.py` jako u jiných archivů.
   Bez Playwrightu (Claude in Chrome neumí výsledek uložit do souboru) ať snímek uloží uživatel (snímek obrazovky).
-- Starší snímky bývají z mikrofilmu nebo silně vybledlé – čti se zvýšeným kontrastem:
-  `magick x.png -colorspace Gray -contrast-stretch 2%x30% x_k.png` (výřez pak dělej z kontrastní verze a poznamenej to v přepisu).
-  Silnější úprava je v `vyrez.py` a `overit.py` přepínačem `--vylepsit` (u `vyrez.py` jen web, `zdroje/` zůstane originál).
+- Starší snímky bývají z mikrofilmu nebo silně vybledlé – výřez dělej s `--kontrast` (`vyrez.py`, `overit.py`;
+  viz `matriky.md`, Čtení písma) a poznamenej to v přepisu.
 - Svazek do `svazky.json` ručně (Ostatní portály, krok 4, klíč `ebad_<matrikaId>`, archiválie `ebad_a_<id>`).
-  Denní údržba portálu kolem 4:44 (asi 2 minuty).
+  Denní údržba portálu kolem 4:44 (asi 2 minuty); večer a v noci bývá nedostupná (zhruba 22:45–0:45 a kolem 2:00).
 
 ## AHMP Praha – `tools/ahmp_search.sh`, `tools/ahmp_scan.py`
 - `bash tools/ahmp_search.sh "Smíchov"` → svazky Sbírky matrik: popis | farnost | (XID, id, počet snímků).
@@ -164,30 +176,67 @@ Adresy u nevyzkoušených portálů ověř při prvním použití (portály se m
   a farností je mnoho – bez přesného data a farnosti (z úmrtí/sňatku nebo od rodiny) je hledání velmi drahé.
 
 ## SOA Litoměřice (severní Čechy) – `tools/soal_zoomify.py`
-- Digitální badatelna digi.soalitomerice.cz má na vstupu automatické ověření (asi 15 s „počítání“) → knihu a snímek
-  najdi v prohlížeči. Pak zjisti **celou adresu obrázku** (`https://images.soalitomerice.cz/…`): v síťovém provozu
-  požadavek na `…/ImageProperties.xml`, nebo `document.querySelector('#navigatorImage').src` na stránce snímku.
-  Archiv koncem října 2026 změnil cesty (nově `…/CZ-214000010/NAD-<číslo>/dao/images/<složka>/<uuid>.jpg`),
-  starší zkrácená `<cesta>` za `…/matriky/` pak vrací 404 – nástroji dávej vždy celou adresu.
+Stejný software jako ZA Opava (Digitální badatelna) – platí i tamní pasti (`vysledekDetail` přímou adresou ukáže jiný
+svazek, výstup JavaScriptu bez parametrů v Claude in Chrome).
+- `https://digi.soalitomerice.cz/digitalnibadatelna/` má na vstupu automatické ověření (asi 15 s „počítání“, projde
+  samo) → knihu a cestu k obrázkům najdi v prohlížeči (Playwright nebo Claude in Chrome), snímky stahuj nástrojem.
+- **Hledání:** ikona Matriky a obec do pole **„Místo / Lokalita“** (hlavní fulltext vrací všech ~18 000 matrik), Enter.
+  Výsledky všechny najednou (počet na stránku přepni jedním výběrem, neprocházej stránky). Svazek otevři kliknutím
+  ve výsledcích a **na detailu ověř signaturu**. Popis knihy uvádí „Územní rozsah“ (obce knihy) – čti ho první.
+  Knihy bývají **rozdělené po obcích** s vlastním stránkováním a rejstříkem na konci.
+- **Adresy snímků** (záložka snímků, `actualDetailTab=attachmentsImg`) zjisti úryvkem – jen pro snímky, které čteš,
+  postupně s pauzou 3 s (`browser_evaluate`; na stránce téhož svazku, jinak showZoomify vrací prázdnou odpověď):
+  ```js
+  async () => {
+    const snimky = [1, 50, 120];   // jen snímky, které opravdu čteš
+    const ent = document.querySelector('[entityuuid]').getAttribute('entityuuid');
+    const ids = Object.fromEntries([...document.querySelectorAll('select.getScanSelect option')].map(o => o.value.split('%20')));
+    const out = [];
+    for (const n of snimky) {
+      if (!ids[n]) { out.push(`${n}: snímek v knize není`); continue; }
+      const h = await (await fetch(`/digitalnibadatelna/showZoomify/${ent}/${ids[n]}`)).text();
+      if (h.trim().length < 300 && !/images\//.test(h)) { out.push(`${n}: BLOKACE („${h.trim().slice(0, 20)}“) – přestaň na 35 minut`); break; }
+      const m = h.match(/https?:\/\/images\.[^"'\s]+?\/images\/[^"'\s]+?\.jpe?g/i);
+      out.push(`${n}: ${m ? m[0] : 'adresa v odpovědi nenalezena'}`);
+      await new Promise(ok => setTimeout(ok, 3000));
+    }
+    return out.join('\n');
+  }
+  ```
+  Složka v cestě (`…/images/0046/…`, `…/NAD-856/dao/images/0701/…`) se liší mezi knihami i uvnitř jedné knihy –
+  adresu nikdy neskládej, vždy celou z výstupu.
 - Snímky stahuj nástrojem: `python3 -I tools/soal_zoomify.py "<celá adresa>" 0 pracovni/x.jpg` (0 = plné rozlišení,
-  1 = poloviční). Obrázkový server neomezuje a cookies nepotřebuje.
-- **POZOR: po zhruba 100 rychlých požadavcích na stránky aplikace (prohlížení snímků, detail výsledku) archiv zablokuje
-  přístup na 30 minut.** V prohlížeči proto jen najdi knihu a cestu k obrázkům, pak už jen nástroj. Pomocníkům to napiš do zadání.
-
+  1 = poloviční, 2 = čtvrtinové na orientaci). Obrázkový server images.soalitomerice.cz neomezuje a cookies nepotřebuje.
+- **POZOR na blokaci aplikace** (obrázky ne): přijde už po 25–100 rychlých krocích (listování výsledky, Zpět, rychlé
+  `fetch`). Ohlásí ji stránka „!“ s **HTTP 200** (asi 116 bajtů) – kontroluj obsah, ne stavový kód. Dotazy jen postupně
+  (žádné `Promise.all`), pauza aspoň 3 s, vždy jen jedna smyčka; po blokaci 35 minut nic (další pokusy ji prodlužují).
+  Pomocníkům to napiš do zadání.
 ## ZA Opava (severní Morava, Slezsko, Olomoucko, Litovelsko) – `tools/soal_zoomify.py`
 - Pozor na hranici: obce na Litovelsku a Olomoucku patří pod **ZA Opava**, ne pod MZA Brno. Těšínsko viz další oddíl.
 - **Bez prohlížeče to nejde.** Badatelna `https://digi.archives.cz/da/` (stará adresa matriky.archives.cz jen přesměruje)
   má ochranu proti robotům – curl ani WebFetch se nedostanou ani na hledání. Potřebuješ připojený prohlížeč (Claude in
   Chrome – uživatel ho připojí příkazem `/chrome`; v OMP `browser` přes eval s `headed: true`, jinak je okno skryté –
   nebo Playwright); jinak ať knihu najde a snímky uloží uživatel.
-  Úvodní ověření projde samo, ale hledání často skončí **CAPTCHou: tu vyřeší uživatel** v okně prohlížeče, ty nikdy.
+  **Vestavěný prohlížeč aplikace Claude** (desktop, Code) archiv odmítne hned („Anomaly detected“) – nepoužívej ho.
+  Úvodní ověření projde samo, ale jen v kartě v popředí. Okno nastav aspoň na 1400×900, v užším se nezobrazí
+  filtry ani snímek. **CAPTCHA přijde typicky už u prvního hledání**, pak zhruba po hodině a v nové relaci
+  prohlížeče vždy znovu: **vyřeší ji uživatel** v okně prohlížeče, ty nikdy.
 - Hledej obec a vyfiltruj Matriky (ikona, potom znovu lupa). Hledání vrací i civilní matriky (u obce stovky svazků) –
   filtr „Datum od – do“ (podle začátku svazku, např. 1680–1873) nechá jen církevní. Knihy bývají řazené po obcích
   a na konci mají rejstřík. Vedle farních knih bývají i **druhopisy** („T“ v signatuře, viz `matriky.md`).
+  Když pole Signatura „zamrzne“ a vrací pořád předchozí knihu, napiš obec do hlavního fulltextového pole (Enter)
+  nebo ji vyber v poli „Územní rozsah“ z našeptávače.
+- **Detail svazku nikdy neotvírej přímou adresou `vysledekDetail/<id>`.** Badatelna drží výsledky hledání v relaci
+  a taková adresa ukáže N-tý (bez `page` první) výsledek posledního hledání nebo snímky naposledy otevřeného
+  svazku – ne svazek z adresy. Svazek otevři trvalým odkazem `https://digi.archives.cz/da/permalink?xid=<id>`
+  (id je konec cesty odkazu ve výsledcích, `vysledekDetail/<id>`) – ten ukáže svazek podle id bez ohledu na poslední
+  hledání, ale jen v prohlížeči, který už prošel ověřením. Jinak klikni ve výsledcích (ikona snímků v řádku, nebo
+  mozaika výsledků a dvojklik na náhled). **Vždy na stránce ověř signaturu a název knihy**, než z ní cokoli čteš.
 - **Seznam svazků a ID snímků si hned ulož** do `pracovni/<svazek>/` – relace po pár hodinách vyprší a výsledky
   hledání platí jen v ní. Na detailu svazku: entita `document.querySelector('[entityuuid]').getAttribute('entityuuid')`
   (u svazků uložených v jiném archivu nemá tvar UUID – nehledej ji regexem), ID snímků jsou hodnoty
-  `select.getScanSelect option` (tvar „N%20uuid“). Snímek pak otevřeš kdykoli bez hledání:
+  `select.getScanSelect option` (tvar „N%20uuid“). Snímek pak otevřeš kdykoli bez hledání (jediná přímá adresa,
+  která na relaci nezávisí):
   `/da/showZoomifySeparate?imageNumberSeparate=N&myEntityUuid=<entita>&myImageUuid=<uuid>`.
 - Adresa obrázku: `fetch('/da/showZoomify/<id svazku z URL>/<část option.value za „%20“>')` vrátí HTML s cestou
   `…/images/<složka>/<uuid>.jpg`. Cesta se u svazků liší (`…/CZ-217000010/NAD-165/dao/images/…`, `…/zao/matriky/dao/images/…`)
@@ -257,6 +306,13 @@ Adresy u nevyzkoušených portálů ověř při prvním použití (portály se m
   snímek 16 → `…-00160.jp2`). Svazek do `svazky.json` ručně (Ostatní portály, krok 4).
 - Doména actapublica.eu MZA nepatří (MZA to potvrdila) – nepoužívej ji, jen www.mza.cz/actapublica. Když MZA nejde
   načíst ani v prohlížeči, ať uživatel zkusí vypnout VPN nebo jinou síť.
+- **Sčítací operáty (1857–1921) nejsou v Acta Publica**, ale v samostatném portálu
+  `https://www.mza.cz/scitacioperaty/digisada/search` – jen v prohlížeči (brzda jiné adresy MZA nepustí), stejná pravidla
+  jako u matrik: žádné stahování ani skládání dlaždic. Hledej obec (pole „Město/obec nebo část obce/osada“); sada =
+  jedna obec a jeden rok (u obce bývá jen některý rok, např. jen 1921), s rozsahem čísel popisných. Detail
+  `…/digisada/detail/<id>` má stejný prohlížeč `viewer` jako matriky (postup výše). Snímek 1 je soupis s metadaty
+  (rozpis čísel, poznámky typu „čp. 134 má 2 archy“), pak archy po domech. 1857 uvádí jen rok narození, 1869 a 1880
+  místo i datum; sloupec dat narození bývá psaný svisle – při čtení přiblížený výřez otoč o 90°.
 
 ## Pražské policejní přihlášky 1850–1914 (Národní archiv) – `tools/policie_prihlasky.py`
 - Karty pražských rodin: hlava rodiny, manželka s rokem a místem narození, děti s roky, adresy, někdy místo sňatku.
@@ -300,6 +356,43 @@ Adresy u nevyzkoušených portálů ověř při prvním použití (portály se m
   (`images[]` = ARK). Snímek: `https://www.familysearch.org/service/records/storage/deepzoomcloud/dz/v1/<ARK 3:1:…>/$dist`
   (plné rozlišení), malé náhledy `…/image_files/8/0_0.jpg`. **Po ~1000 rychlých požadavcích přijde HTTP 429** a blokace
   na desítky minut – stahuj jen konkrétní snímky, nanejvýš pár za sekundu, hromadné procházení knih nedělej.
+- **Slovensko** (sbírka „Slovakia Church and Synagogue Books 1592–1935“; bez účtu FamilySearch to nejde):
+  1. **Fara:** katalog `https://www.familysearch.org/search/catalog/results?q.keywords=Farský úrad <obec>` (také
+     „Grécko-katolícka …“, „Evanjelická …“). Najde i fary celého okolí – v závorce za farou je obec, pod kterou je
+     katalog vede. Hledání podle místa (`q.place`) a maďarské názvy obcí často nenajdou nic nebo stejnojmennou obec v ČR.
+  2. **Natočené roky:** v záznamu fary přečti tabulku filmů (`browser_evaluate`, jen text, bez odkazů):
+     `[...document.querySelectorAll('tr')].map(r => [...r.cells].map(c => c.innerText.trim()).join(' | '))`
+     → Poznámka (druhy a roky) | Film | **DGS**. Název záznamu přeceňuje: „Cirkevná matrika, 1762–1927“ má křty,
+     sňatky i úmrtí jen do **1895** (do 1927 jen biřmování). Po ~1895 vedl stát civilní matriky – mladší zápisy jsou
+     ve státním archivu nebo na matričním úřadě (na Slovensku 100 let i u úmrtí), ne online.
+  3. **Index je neúplný** (hlavně křty) a jména zkomolená, u dvou křestních jmen bývá jen jedno; `q.anyPlace`
+     výsledky nefiltruje, jen řadí. Hledej přes rodiče a bez křestního jména, jinak listuj snímky filmu (DGS výše;
+     nejdřív rejstřík „Zoznam krstov A–Z“, bývá na začátku knihy).
+  4. **1900–1940:** doklady od rodiny (rodné listy dětí uvádějí i prarodiče), náhrobky a evidence hrobů (Košice:
+     gisplan.kosice.sk; cintoriny.sk jen část obcí). Rusíni vedení po 1950 jako pravoslavní mají starší zápisy
+     v řeckokatolických knihách.
+- **Snímek do projektu (Playwright):** nástroje dostanou od FamilySearch 403, snímek vydá jen přihlášený prohlížeč.
+  Uživatel se jednou přihlásí v okně Playwrightu (přihlášení zůstane). ARK snímku je v adrese prohlížeče
+  (`/ark:/61903/3:1:…`) i ve výsledcích hledání. Nejdřív `python3 -I tools/cache.py najdi <adresa nebo ark>
+  --nahled pracovni/nahled.jpg` – je-li snímek už uložený, prohlížeč nepotřebuješ. Jinak `browser_evaluate`
+  s `filename: "pracovni/fs.json"`:
+  ```js
+  async () => {
+    const ark = '3:1:XXXX-XXXX-XXX';
+    const adresa = `https://www.familysearch.org/service/records/storage/deepzoomcloud/dz/v1/${ark}/$dist`;
+    const r = await fetch(adresa, {credentials: 'include'});
+    if (!r.ok) return `HTTP ${r.status} – snímek nejde stáhnout (přihlášení? omezený snímek?)`;
+    const b = await r.blob(), bm = await createImageBitmap(b);
+    const data = await new Promise(ok => { const f = new FileReader(); f.onload = () => ok(f.result); f.readAsDataURL(b); });
+    return JSON.stringify({w: bm.width, h: bm.height, adresa, data});
+  }
+  ```
+  a `python3 -I tools/cache.py uloz pracovni/fs.json pracovni/fs_<ark>.jpg --nahled pracovni/nahled.jpg` (snímek
+  v plném rozlišení do mezipaměti i do `pracovni/`, json smaže). Dál `vyrez.py` jako u jiných archivů.
+- **Bez Playwrightu (Claude in Chrome neumí ukládat do souboru):** ať uživatel snímek stáhne tlačítkem Download
+  (nebo ho se souhlasem stáhneš ty) – soubor přijde do `~/Downloads` jako `<id snímku>.jpg`, chvíli může mít
+  příponu `.tmp`. Přesuň **jen soubor s očekávaným názvem**, nikdy „nejnovější soubor ve Stažených“ (je tam i cizí).
+  Žádné vlastní přijímače na localhostu ani jiné obcházení ochran prohlížeče.
 
 ## FamilySearch v Chromu uživatele (slovenské a uherské matriky)
 Ověřený postup pro sbírku „Slovakia Church and Synagogue Books, 1592–1935“ a jiné uherské matriky v uživatelově
@@ -357,6 +450,14 @@ A když osoba „chybí“ v očekávaných matrikách (stěhovala se se službo
   ALEX a annoshow jsou za Cloudflare – neobcházet.
 - Kramerius NK ČR (české noviny, ročenky, adresáře): `python3 -I tools/kramerius.py 'text_ocr:"Jan Novák" AND datum_begin:[1900 TO 1910]'`.
 - Vojenské schematismy: fulltext na archive.org (např. `militrschematis13kriegoog` = 1850).
+- **Vojáci 1. světové války – seznamy ztrát** (ANNO, plný text): `python3 -I tools/anno.py '"Příjmení Jméno"' 1914 1919 3 --snip --ztraty`
+  (jen `vll` Verlustliste, `vlv` abecední rejstřík s číslem seznamu, `nvv` Nachrichten über Verwundete; jiné listy
+  `ANNO_TITLE=ptb,wrz`). Záznam: hodnost, pluk, setnina, **domovská obec, ročník**, raněn/zajat/padl – např.
+  „Hromadko Wenzel, Inft., IR. Nr. 98, 4. Marschkomp., Rokosnitz, 1881, Schuß …“. Pořadí je „Příjmení Jméno“, německy
+  (Wenzel, Johann) a zkus i bez háčků; shodu potvrď obcí a ročníkem. Běžná příjmení mají tisíce výskytů – hledej
+  vzácným příjmením nebo domovskou obcí v německém tvaru. Krajské noviny otiskovaly seznamy padlých okresu.
+  Padlí na frontě v domovské matrice zemřelých často nejsou. Kartotéka padlých VÚA je jen v Digitální badatelně MO
+  po registraci (stará databáze VÚA už neexistuje).
 - **Rizika:** jména se opakují a fulltext šumí („Winter“ = i zima, „Novák“ = nový obyvatel). Ztotožni jen při shodě víc údajů (bydliště,
   funkce navazující na matriku, časová posloupnost). Zdroj je „J“ (jiný pramen) – vodítko a příběh, ne náhrada matriky.
 - Výstřižky jsou skvělé na web: ulož do `dokumenty/noviny/`, přes `vyrez.py` a do `dokumenty.json`.
@@ -387,6 +488,19 @@ Nástroje pro ně hotové nejsou. Postupuj takto a výsledek zapiš do `STAV.md`
   Na **císařských otiscích** chybí u části listů barvy a čísla domů. Lepší jsou **indikační skici**: mají čísla domů
   a u pozemků jméno majitele („N. 13“ = patří k domu čp. 13). Dům bez pozemků mimo ves = domkář bez polí.
   Jméno majitele samotného domu bývá jen v písemném operátu (archiv, ne online). Výřezy map patří na web k rodině.
+  - **Postup (jen v prohlížeči, služby jsou za tokenem – ten si stránka bere sama, nevypisuj ho):** na ags.cuzk.gov.cz/archiv
+    najdi katastrální území, klikni do mapy na obec → „Indikační skici“ (nebo „Císařské povinné otisky“) → ID rastru
+    (např. `HRA235018400`). Skica pak jde otevřít přímo: `https://ags.cuzk.gov.cz/archiv/openmap.html?typ=skicic&idrastru=<ID>`
+    (list otisku `typ=cioc`); načítá se asi 20 s. Osada často nemá vlastní katastr (Polom → k. ú. Lhota u Dobrušky) –
+    hledej podle sousední obce. Přibližuj kolečkem na bod, tažení myší mapu posouvá nevyzpytatelně.
+  - **Morava:** odkaz vede do prohlížeče MZA (fond D 9, často dva listy: původní z 30. let a reambulace ze 70. let 19. stol.).
+    MZA stahovací skripty zakazuje – jen přiblížit a snímek obrazovky (jako u matrik MZA). Listy Moravy nejsou georeferencované.
+  - **Čtení:** v budově je **červeně číslo popisné** a **černě číslo stavební parcely** (pozemkové parcely mají čísla
+    červená); záměna přečte celou ves obráceně. Při pochybnosti ověř na pár domech: vrstva pozemkového katastru
+    (archiv_spojene_pk) s adresními body RÚIAN ukáže, na které parcele stojí dnešní čp. „N° 35 Příjmení“ u pozemku
+    = patří k domu čp. 35.
+    Žlutá stavba dřevěná, růžová zděná. Popisky bývají vzhůru nohama (výřez otoč o 180°). U měst bývá intravilán prázdný.
+    Ulož jen snímkem obrazovky (stahování je placené) a na web dej výřez se zakroužkovaným domem.
 - **Dnešní adresa domu** podle čísla popisného: RÚIAN (ČÚZK, vrstva AdresniMisto). Pozor, staré centrum mívá od 19. století
   stejná čp., ale předměstí a vesnice čísla přečíslovávaly. Hodí se na „procházku po stopách předků“.
   Stavbu podle obce a čísla popisného najde i nahlizenidokn.cuzk.gov.cz (ověření adresy z dokladu); vlastník je za

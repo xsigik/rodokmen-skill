@@ -13,7 +13,9 @@ a překladem), stránka osoby, rodiny, „Co hledáme“, výzkumný deník, hle
 | `npm run build` | sestaví web do `dist/` |
 | `npm run nahled` | data + build + náhled na http://localhost:4321 (Ctrl+C ukončí) |
 | `npm run dev` | vývojový režim při úpravách vzhledu |
-| `npm run nasadit` | data + build + nahrání na Netlify |
+| `npm run nasadit-cloudflare` | data + build + nahrání na Cloudflare (výchozí) + kontrola |
+| `npm run nasadit` | data + build + nahrání na Netlify + kontrola |
+| `npm run overit` | kontrola nasazeného webu bez přihlášení (rodinná otázka × ochrana týmu Netlify / stránka Cloudflare) |
 
 Náhled spouštěj na pozadí a uživateli pošli odkaz. Vzhled si ověř sám (snímek obrazovky přes prohlížeč, je-li k dispozici).
 
@@ -32,7 +34,8 @@ Náhled spouštěj na pozadí a uživateli pošli odkaz. Vzhled si ověř sám (
 ```
 - `kontakt.jmeno` je ve 3. pádě („Napište Petrovi na …“).
 - **Přihlášení:** otázka, na kterou zná odpověď jen rodina (ne snadno dohledatelná na sociálních sítích).
-  Odpověď se porovnává bez diakritiky a velkých písmen. Na serveru i v cookie prohlížeče je jen její otisk (SHA-256),
+  Odpověď se porovnává bez diakritiky a velkých písmen a musí obsahovat písmena nebo číslice z latinky (azbuka
+  a samotné symboly nejdou). Na serveru i v cookie prohlížeče je jen její otisk (SHA-256),
   samotná odpověď se nikam neukládá. Krátkou nebo běžnou odpověď (jméno, obec) ale jde z otisku uhádnout zkoušením,
   proto ať ji uživatel nepoužívá jako heslo jinde. Bez odpovědi nasazení (`npm run nasadit`, `deploy-caprover`)
   skončí chybou; otevřený web jen výslovně přes `"otevreny": true` v `prihlaseni`.
@@ -44,7 +47,47 @@ Náhled spouštěj na pozadí a uživateli pošli odkaz. Vzhled si ověř sám (
 - `citlive_schvaleno`: seznam úryvků textu, které uživatel na webu schválil (např. `["oběsil se ve stodole"]`) –
   `kontrola.py` je pak nehlásí jako `CITLIVÉ`. Úryvek musí obsahovat hlášené slovo; když se text změní, hlásí se znovu.
 
-## Zveřejnění na Netlify (výchozí, zdarma)
+## Zveřejnění na Cloudflare (výchozí, zdarma)
+Nasazování i přenos jsou zdarma bez limitu; brána běží před každým souborem a to se počítá do 100 000 požadavků denně
+(stránka webu je asi 20–40 požadavků → tisíce zobrazení denně; po vyčerpání vrací web do půlnoci UTC chybu 429).
+1. **Účet:** nemá-li uživatel účet Cloudflare, ať si ho **nejdřív** založí na dash.cloudflare.com (zdarma, stačí e-mail)
+   a potvrdí e-mail z pošty – registrace se do dvou minut přihlášení nevejde. Až je v dashboardu přihlášený, pokračuj.
+2. **Přihlášení:** spusť sám na pozadí `cd web && npx -y wrangler@4 login` – otevře prohlížeč. Řekni uživateli:
+   „Otevře se stránka Cloudflare – klikni na **Allow**, máš na to asi 2 minuty.“ Ověření: `npx -y wrangler@4 whoami`.
+   - **„Application authorization failed / Authentication error, please login“:** prohlížeč není u Cloudflare přihlášený
+     (typicky hned po registraci, nebo jiné okno/anonymní okno). „Retry authorization“ nepomůže, když login mezitím
+     vypršel. Ať se uživatel v tom prohlížeči přihlásí na dash.cloudflare.com, pak spusť `wrangler login` znovu
+     (nový odkaz). Odkaz bez otevření prohlížeče: `npx -y wrangler@4 login --browser=false`.
+   - „Timed out waiting for authorization code“ = vypršely 2 minuty, spusť login znovu.
+3. **Adresa webu:** web poběží na `https://rodokmen.<název>.workers.dev`. Vymysli 2–3 názvy podle rodu (malá písmena
+   bez diakritiky, pomlčky: `novakovi`, `novakovi-holice`, `rod-novaku`), ověř je
+   `cd web && node scripts/nasadit_cloudflare.mjs --volno novakovi novakovi-holice rod-novaku` (ptá se DNS Cloudflare,
+   adresu tím „nevyplašíš“) a uživateli nabídni jen volné. Vybraný zapiš do `data/web.json` jako
+   `"cloudflare": {"nazev": "novakovi"}`. Název je subdoména celého účtu Cloudflare (založí se při prvním nasazení,
+   změnit jde jen v administraci); kdyby byl přece obsazený, nasazení zkusí variantu s číslem a řekne ji.
+   **Má-li uživatel účet Cloudflare už dřív**, použije se jeho stávající subdoména a název z `web.json` se nepoužije –
+   adresu pak řekne až nasazení.
+4. **Nasazení:** `cd web && npm run nasadit-cloudflare` (spusť sám). Vypíše adresu a sám spustí kontrolu
+   `scripts/overit.mjs`. U nové adresy kontrola počká, až se rozšíří (pár minut); když ji počítač ještě nezná, řekne to
+   a skončí bez chyby – pak ověř později `npm run overit`. Do té doby adresu v prohlížeči neotvírej: počítač nebo
+   router by si zapamatoval, že neexistuje, a až 30 minut by ji neviděl (jinde, třeba v telefonu na mobilních datech,
+   web už jede). Řekni to uživateli, ať se nelekne.
+5. Ověř i sám v anonymním okně: rodinná otázka, po správné odpovědi web.
+   Bránu (`web/cloudflare/worker.js`) a `web/wrangler.jsonc` vyrábí export – ručně neupravovat. Brána musí běžet
+   před každým souborem (`run_worker_first`), jinak by šly stránky a fotky stáhnout bez přihlášení.
+Další aktualizace = jen `npm run nasadit-cloudflare`.
+
+**Pasti:**
+- „You need to verify your email address to use Workers“ (403) u nového účtu: Cloudflare chce ověřený e-mail – ověření
+  v dashboardu (pruh nahoře / My Profile), potvrdit odkaz v poště, nasadit znovu (subdoména už zůstane založená).
+- Safari s blokátorem obsahu ukáže místo ověřovací stránky Cloudflare prázdnou stránku 403 – zkus jiný prohlížeč
+  (kontrola to pozná).
+- Nepoužívej `wrangler pages project create/deploy` ani „Import a repository“ v administraci – založí jiný typ projektu,
+  případně sám přepíše `astro.config`/`package.json`. Nasazuj jen přes `npm run nasadit-cloudflare`.
+- V cloudovém prostředí (claude.ai), kde se přihlášení přes prohlížeč nevrátí do terminálu, použij Netlify (`login --request`).
+
+## Zveřejnění na Netlify (druhá možnost)
+Pro uživatele, kteří už web na Netlify mají. Bezplatný účet vystačí jen na asi 20 nasazení měsíčně (viz kredity níže).
 1. Uživatel si založí účet na netlify.com (stačí přihlášení přes Google/GitHub) – udělá sám.
 2. Přihlášení CLI (otevře prohlížeč) – dej uživateli: `! cd web && npx -y netlify-cli@latest login`.
    Když `!` nejde (cloudové prostředí): `npx -y netlify-cli@latest login --request "Rodokmen"` vypíše odkaz a číslo
@@ -55,13 +98,22 @@ Náhled spouštěj na pozadí a uživateli pošli odkaz. Vzhled si ověř sám (
    (můžeš spustit sám): `cd web && npx -y netlify-cli@latest sites:create --name <název> --account-slug <tým>`.
    **Windows:** když `!` běží ve Windows PowerShellu 5.1 (`&&` tam nefunguje a `npx` blokuje Execution Policy), ať uživatel
    otevře PowerShell 7 nebo Příkazový řádek, přejde do složky `web` a spustí `npx -y netlify-cli@latest login` (a `sites:create`).
-4. Nasazení: `cd web && npm run nasadit` (můžeš spustit sám; vypíše adresu webu).
-5. Ověř: otevři adresu **v anonymním okně** → musí se ukázat rodinná přihlašovací otázka; po správné odpovědi web.
-   Ukáže-li se místo ní přihlášení k Netlify (401, „Login Redirect“), zdědil web ochranu týmu („Team protection“).
-   Uživatel ji vypne v administraci webu: Project configuration → Access & security → Visitor access. Web pak chrání
-   rodinná otázka – proto znovu ověř v anonymním okně, že se ukáže.
+   **Nový web bývá „Private“ (ochrana týmu)** – rodina by místo rodinné otázky viděla přihlášení k Netlify a majitel to
+   nepozná (je přihlášený). Řekni to uživateli předem; kontrola po nasazení (krok 4) ji pozná. Vypni ji se souhlasem uživatele:
+   `npx -y netlify-cli@latest api updateSite --data '{"site_id":"<siteId z web/.netlify/state.json>","body":{"sso_login":false}}'`
+   (v administraci: Project configuration → Access & security → Visitor access → Project visibility → Edit visibility → Public).
+4. Nasazení: `cd web && npm run nasadit` (můžeš spustit sám; vypíše adresu webu). Na konci se sama spustí kontrola
+   `scripts/overit.mjs` (ručně `npm run overit`): otevře web bez přihlášení a pozná rodinnou otázku, ochranu týmu Netlify
+   (vypíše, jak ji vypnout) i web bez brány. Skončí-li chybou, oprav to a spusť `npm run overit` znovu.
+5. Ověř i sám: otevři adresu **v anonymním okně** → rodinná otázka, po správné odpovědi web.
    Přihlášení zajišťuje Netlify Edge Function `web/netlify/edge-functions/brana.js` (generuje ji export).
 Další aktualizace = jen `npm run nasadit`. Vlastní doménu lze nastavit v administraci Netlify.
+
+**Kredity Netlify (bezplatný účet):** 300 kreditů měsíčně, nepřevádějí se. Každé nasazení stojí 15 (nepovedené nic),
+1 GB přenosu 20 → asi 20 nasazení měsíčně, nebo méně, když rodina stahuje velké výřezy ze `zdroje/`. Po vyčerpání
+Netlify nasazování pozastaví a `npm run nasadit` skončí „Forbidden“ – to jsou vyčerpané kredity, ne chyba webu
+(stav kreditů je v administraci Netlify). Proto nasazuj na pokyn uživatele nebo jednou na konci sezení, mezitím jen
+náhled. Řekni to uživateli hned při prvním zveřejnění.
 
 **Pozor:** „Netlify Drop“ (přetažení složky v prohlížeči) neumí Edge Functions → web by byl bez přihlášení. Nepoužívat.
 
@@ -92,6 +144,18 @@ zkus v `launch.json` `"runtimeExecutable": "node"` a `"runtimeArgs": ["web/node_
 
 ## Vlastní server (pokročilé)
 - Docker: `web/Dockerfile` (build Astro → nginx s `nginx.conf` z `nginx.sablona.conf`). Před buildem image vždy `npm run data`.
+  Bez Node.js na počítači: `python3 -I tools/export_web.py --nasazeni`, pak `docker build` ve `web/` (Astro se sestaví v image).
+- Přestavba nechává na disku starý image bez tagu (stovky MB). Po `docker build` smaž jen starý image tohoto webu:
+  ```
+  OLD=$(docker images -q rodokmen-web:latest); docker build -t rodokmen-web .
+  docker rm -f rodokmen-web; docker run -d --name rodokmen-web --restart unless-stopped -p 8080:80 rodokmen-web
+  [ -n "$OLD" ] && [ "$OLD" != "$(docker images -q rodokmen-web:latest)" ] && docker image rm "$OLD"
+  ```
+  `docker system/image/builder prune` nepoužívej – platí pro celý server a smaže i věci jiných projektů.
+- Web počítá s během v kořeni domény (odkazy, cookie přihlášení i hledání od `/`) – za reverse proxy mu dej
+  subdoménu (`rodokmen.server.cz`), ne podadresář (`server.cz/rodokmen/`).
+- **Jen přes https** (reverse proxy s Let's Encrypt, DSM, CapRover to umí): přihlašovací stránka počítá otisk odpovědi
+  v prohlížeči a ten to přes obyčejné http (mimo localhost) nedovolí – přihlášení by nefungovalo.
 - CapRover: `npm run deploy-caprover` (vyžaduje nainstalovaný a přihlášený `caprover` CLI).
 
 ## Úpravy vzhledu

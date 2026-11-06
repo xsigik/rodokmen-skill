@@ -6,8 +6,9 @@ Použití (z kořene projektu `python3 -I tools/portafontium.py …`, na Windows
                                                 <fara> = část adresy římskokatolické fary, např. „dolni-bela“
                                                 (https://www.portafontium.eu/contents/register/soap-pn/cirkev-rimskokatolicka/dolni-bela);
                                                 jiná skupina matrik se skupinou před lomítkem: „okresni-urad/domazlice“
-                                                (okresní civilní matriky), „standesamt/okres-cheb/cheb“, „cirkev-evangelicka/as“;
-                                                obec → fara nástroj nehledá – faru zjisti na portálu (vyhledávání matrik, pole Místo)
+                                                (okresní civilní matriky), „standesamt/okres-cheb/cheb“, „cirkev-evangelicka/as“
+  portafontium.py obec <obec>                -> knihy s obcí v popisu, seskupené podle fary (i historické názvy obce;
+                                                stejnojmenné obce jiných far vyřaď podle sloupce obcí)
   portafontium.py scitani                    -> sčítání lidu: soudní okresy | roky
   portafontium.py scitani <archiv>/<rok>/<okres>   -> obce okresu: id | obec | počet domů   (např. soap-do/1921/okres-domazlice)
   portafontium.py scitani "<obec>" [rok]     -> obec ve všech okresech daného roku (výchozí 1921; i německý název)
@@ -304,6 +305,43 @@ def domy(id_):
     print("tentýž dům v jiných letech (rok:id):", "  ".join(f"{x}:{i or kniha}" for x, i in r))
 
 
+def obec(nazev):
+    """Knihy, v jejichž popisu je obec (i historické a podobné názvy) – vyhledávání matrik portálu podle místa."""
+    url = "/searching/register?search_api_views_fulltext_1=" + urllib.parse.quote(nazev.strip())
+    out, n = [], 0
+    while True:   # výsledky po 40 na stránku
+        page = get(url + (f"&page={n}" if n else ""))
+        for row in re.findall(r"<tr[^>]*>(.*?)</tr>", page, re.S):
+            m = re.search(r'href="/register/[^/]+/([^"]+)"', row)
+            if not m:
+                continue
+            cells = [text(c) for c in re.findall(r"<td[^>]*>(.*?)</td>", row, re.S)]
+            out.append((m.group(1), [c for c in cells if c and c != ">"]))
+        n += 1
+        if not re.search(rf"[?&](?:amp;)?page={n}\b", page) or n > 50:
+            return out
+
+
+def _rok(s):
+    m = re.search(r"\d{4}", s)
+    return int(m.group()) if m else 9999
+
+
+def vypis_obec(knihy):
+    """Knihy seskupené podle fary (nebo úřadu), fary i knihy podle začátku let – přechod obce mezi farami je vidět."""
+    skupiny = {}
+    for k, c in knihy:   # c = archiv | název knihy | obce | roky a druhy | popis
+        nazev = re.sub(r"\s+\S*\d+\w*$", "", c[1]) if len(c) > 1 else k
+        skupiny.setdefault((nazev, re.sub(r"-\d+\w*$", "", k)), []).append((k, c[2:]))
+    for (nazev, slug), kn in sorted(skupiny.items(), key=lambda g: min(_rok(" ".join(c)) for _, c in g[1])):
+        print(f"{nazev} (fara {slug})")
+        for k, c in sorted(kn, key=lambda x: _rok(x[1][1] if len(x[1]) > 1 else "")):
+            print(" ", k, "|", " | ".join(zkrat(x, 160) for x in c))
+        print()
+    print("Pozor: portál hledá i historické a podobné názvy – podle sloupce obcí vyřaď stejnojmenné obce jiných far.\n"
+          "Obec mohla v různých letech patřit k různým farám (viz roky); knihy okresních úřadů jsou civilní matriky.")
+
+
 def zkrat(s, n=300):
     return s if len(s) <= n else s[:n].rsplit(" ", 1)[0] + " …"
 
@@ -338,9 +376,16 @@ if __name__ == "__main__":
         knihy = fara(a[1])
         if not knihy:
             sys.exit(f"Fara „{a[1]}“ nenalezena nebo nemá knihy – zkontroluj část adresy "
-                     "(např. dolni-bela, okresni-urad/domazlice).")
+                     f"(např. dolni-bela, okresni-urad/domazlice). Stejnojmenné fary mají příponu okresu "
+                     f"(plana-ps, radnice-ro): správnou adresu ukáže portafontium.py obec \"{a[1]}\".")
         for k, c in knihy:
             print(k, "|", " | ".join(zkrat(x) for x in c[1:]))
+    elif a[0] == "obec" and len(a) > 1:
+        knihy = obec(" ".join(a[1:]))
+        if not knihy:
+            sys.exit(f"Obec „{' '.join(a[1:])}“ v popisu knih nenalezena – zkus jiný tvar názvu (Stajanovice × "
+                     "Stojanovice, německý název) nebo sousední obec.")
+        vypis_obec(knihy)
     elif a[0] == "info" and len(a) > 1:
         k, f, s, _ = info(a[1])
         for lab, val in f.items():
