@@ -81,7 +81,7 @@ nevznikl a jeho čtení nikdo nesrovnal s ručním přepisem.
 ### Varianta A – jako plugin v Claude Code (doporučeno)
 V Claude Code napište:
 ```
-/plugin marketplace add sarsonj/rodokmen-skill
+/plugin marketplace add xsigik/rodokmen-skill
 /plugin install rodokmen@rodokmen-skill
 ```
 Pak Claude Code restartujte (do běžící relace se nový plugin nenačte).
@@ -101,7 +101,7 @@ na novou verzi (vaše data i vlastní úpravy webu a nástrojů zůstanou, změn
 ### Varianta B – jako plugin v Codexu
 V terminálu:
 ```
-codex plugin marketplace add sarsonj/rodokmen-skill
+codex plugin marketplace add xsigik/rodokmen-skill
 codex plugin add rodokmen@rodokmen-skill
 ```
 Aktualizace později: `codex plugin marketplace upgrade rodokmen-skill` (kdyby `codex plugin list` ukazoval starou verzi,
@@ -119,10 +119,10 @@ a při spuštění Codexu ve složce potvrďte, že jí důvěřujete. Agent vá
 ### Varianta C – jako plugin v OMP
 V terminálu:
 ```
-omp plugin marketplace add sarsonj/rodokmen-skill
+omp plugin marketplace add xsigik/rodokmen-skill
 omp plugin install rodokmen@rodokmen-skill
 ```
-(nebo uvnitř OMP `/marketplace add sarsonj/rodokmen-skill`, `/marketplace install rodokmen@rodokmen-skill`
+(nebo uvnitř OMP `/marketplace add xsigik/rodokmen-skill`, `/marketplace install rodokmen@rodokmen-skill`
 a pak `/reload-plugins`).
 Aktualizace později: `omp plugin marketplace update rodokmen-skill && omp plugin upgrade rodokmen@rodokmen-skill`.
 Rozpracovaný projekt pak agent sám nabídne aktualizovat, stejně jako v Claude Code.
