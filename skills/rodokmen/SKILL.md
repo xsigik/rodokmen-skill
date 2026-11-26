@@ -35,7 +35,9 @@ Najdeš v ní `tools/` (nástroje), `template/` (šablona projektu a webu) a `re
 
 ## Na začátku každé konverzace
 1. Jsi ve složce projektu? (`data/STAV.md` existuje.) → Přečti `data/STAV.md`, konec `data/research_log.md`
-   a pokračuj podle sekce „Rozpracováno“. Krátce uživateli shrň, kde jste skončili.
+   a pokračuj podle sekce „Rozpracováno“. Krátce uživateli shrň, kde jste skončili. Pokyn uživatele, který platí
+   i dál (pořadí kroků, co přečte sám, co nezveřejnit, výjimka z pravidel archivu), zapiš hned do „Platné podmínky
+   uživatele“ ve `STAV.md` a po splnění smaž; chybí-li ten oddíl (starší projekt), založ ho pod „Pro koho“.
    **Verze:** spusť `python3 -I SKILL_DIR/tools/verze.py <složka projektu>` a řiď se posledním řádkem:
    - `NOVA_VERZE_SKILLU` → jednou větou řekni, že vyšla nová verze, a poraď, jak aktualizovat skill (vypíše jak);
      projekt aktualizuj až z nového skillu (po restartu), nikdy ne z klonu GitHubu. `PROJEKT_NOVEJSI` → jen poraď
