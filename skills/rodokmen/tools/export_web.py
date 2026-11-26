@@ -11,6 +11,8 @@ Suchá kontrola: `python3 -I tools/export_web.py --kontrola-odkazu` vypíše JSO
 spočítá aktuální adresy z dat, ale nic nezapisuje ani nespouští generování vějíře.
 """
 import hashlib, html, json, os, re, shutil, subprocess, sys, unicodedata
+if sys.argv[1:2] in (["-h"], ["--help"]):   # nápověda místo pádu
+    sys.exit(__doc__.strip())
 for _s in (sys.stdout, sys.stderr):   # UTF-8 výstup i na Windows bez -X utf8 (cp1250 neumí třeba „→“)
     if hasattr(_s, "reconfigure"):
         _s.reconfigure(encoding="utf-8", errors="replace")
@@ -33,13 +35,13 @@ def jload(name, default):
     path = os.path.join(DATA, name)
     if not os.path.exists(path):
         return default
-    with open(path, encoding="utf-8") as f:
+    with open(path, encoding="utf-8-sig") as f:
         return json.load(f)
 
 
 def load_people():
     ns = {}
-    exec(open(os.path.join(DATA, "osoby.py"), encoding="utf-8").read(), ns)
+    exec(open(os.path.join(DATA, "osoby.py"), encoding="utf-8-sig").read(), ns)
     for name, default in (("P", {}), ("SIDE", []), ("LINES", {}), ("ISSUES", []), ("HYPOTEZY", []), ("SAME", {})):
         ns.setdefault(name, default)
     return ns
@@ -156,7 +158,7 @@ def login_files(cfg):
     """Přihlašovací brána: otázka na webu, na serveru (nginx i Netlify) jen otisk odpovědi (SHA-256).
     Stejný otisk spočítá přihlašovací stránka a uloží ho do cookie – samotná odpověď se nikam neukládá."""
     login = cfg.get("prihlaseni") or {}
-    answer = norm_answer(login.get("odpoved", ""))
+    answer = norm_answer(str(login.get("odpoved", "")))   # i číslo („1923“ bez uvozovek)
     tpl = open(os.path.join(WEB, "prihlaseni.sablona.html"), encoding="utf-8").read()
     if "rodokmen:" not in tpl:   # stará šablona (do 0.4.0) ukládá do cookie odpověď – s novou bránou by se nikdo nepřihlásil
         sys.exit("CHYBA: web/ má starou šablonu přihlášení. Aktualizujte projekt: python3 -I <skill>/tools/novy_projekt.py <složka projektu>")
@@ -225,19 +227,24 @@ def cloudflare_files(cfg, digest):
     tpl = os.path.join(WEB, "cloudflare", "worker.sablona.js")
     if not os.path.exists(tpl):
         return
-    # cloudflare.nazev = subdoména účtu (adresa https://rodokmen.<nazev>.workers.dev), zakládá ji nasadit_cloudflare.mjs
-    name = ((cfg.get("cloudflare") or {}).get("nazev") or "").strip()
-    if name and not re.fullmatch(r"[a-z0-9](?:[a-z0-9-]{0,48}[a-z0-9])?", name):
-        sys.exit(f"CHYBA: cloudflare.nazev v data/web.json „{name}“ nejde použít – jen malá písmena bez diakritiky, "
-                 "číslice a pomlčky (nejvýš 50 znaků), např. „novakovi“.")
+    # Adresa https://<web>.<nazev>.workers.dev: cloudflare.nazev = subdoména účtu (jedna na účet, zakládá ji
+    # nasadit_cloudflare.mjs), cloudflare.web = název webu na účtu (výchozí „rodokmen“; druhý projekt na stejném
+    # účtu musí mít jiný, jinak by první web přepsal).
+    cf = cfg.get("cloudflare") or {}
+    for pole, priklad in (("nazev", "novakovi"), ("web", "rodokmen-dvorakovi")):
+        hodnota = (cf.get(pole) or "").strip()
+        if hodnota and not re.fullmatch(r"[a-z0-9](?:[a-z0-9-]{0,48}[a-z0-9])?", hodnota):
+            sys.exit(f"CHYBA: cloudflare.{pole} v data/web.json „{hodnota}“ nejde použít – jen malá písmena bez diakritiky, "
+                     f"číslice a pomlčky (nejvýš 50 znaků), např. „{priklad}“.")
+    web_nazev = (cf.get("web") or "").strip() or "rodokmen"
     worker = (open(tpl, encoding="utf-8").read().replace("{{HASH}}", digest)
               .replace("{{OTEVRENY}}", "false" if digest else "true"))
     write(os.path.join(WEB, "cloudflare", "worker.js"), worker)
     wrangler = {
-        "name": "rodokmen",
+        "name": web_nazev,
         "main": "cloudflare/worker.js",
         "compatibility_date": "2026-10-01",
-        "workers_dev": True,      # adresa https://rodokmen.<subdoména>.workers.dev
+        "workers_dev": True,      # adresa https://<web>.<subdoména>.workers.dev
         "preview_urls": False,    # bez zvláštních adres pro jednotlivé verze
         "assets": {"directory": "./dist", "binding": "ASSETS", "run_worker_first": True,
                    "not_found_handling": "404-page"},
@@ -255,8 +262,8 @@ def main():
     SAME = ns["SAME"]                       # alias Kekulé → kanonické Kekulé (předek v rodokmenu vícekrát)
     cfg = jload("web.json", {})
     login = cfg.get("prihlaseni") or {}
-    if "--nasazeni" in sys.argv and not norm_answer(login.get("odpoved", "")) and not login.get("otevreny"):
-        if login.get("odpoved", "").strip():
+    if "--nasazeni" in sys.argv and not norm_answer(str(login.get("odpoved", ""))) and not login.get("otevreny"):
+        if str(login.get("odpoved", "")).strip():
             sys.exit("CHYBA: odpověď na přihlašovací otázku musí obsahovat písmena nebo číslice z latinky "
                      "(azbuka a samotné symboly nejdou, diakritika nevadí). Zvolte s uživatelem jinou odpověď.")
         sys.exit("CHYBA: v data/web.json není odpověď na přihlašovací otázku – web by byl otevřený komukoli.\n"
@@ -276,7 +283,11 @@ def main():
             s = f"{s}-{k}"
         used.add(s)
         slugs[k] = s
-    for a, c in SAME.items():
+    for a, c in list(SAME.items()):
+        if c not in slugs:   # hlavní osoba je zástupná (bez jména) nebo chybí – alias nemá kam ukazovat
+            print(f"POZOR: SAME {a} -> {c} – osoba {c} je zástupná nebo chybí, alias vynechávám (oprav data/osoby.py)")
+            del SAME[a]
+            continue
         slugs[a] = slugs[c]
     aliases_of = {}
     for a, c in SAME.items():
@@ -303,14 +314,14 @@ def main():
             fatherUnknown=(2 * k in P and placeholder(P[2 * k])), motherUnknown=(2 * k + 1 in P and placeholder(P[2 * k + 1])),
             child=slugs.get(k // 2) if k > 1 else None, spouse=slugs.get(k ^ 1) if k > 1 else None,
             family=None, ownFamily=None, path=path,
-            side=[dict(name=s["n"], text=s["t"], records=[r for r in s.get("r", []) if r in recs]) for s in SIDE if s["k"] == k],
-            docs=[dict(img=d["img"], caption=d["popis"]) for d in docs_cfg if k in d.get("osoby", [])],
+            side=[dict(name=s["n"], text=s.get("t", ""), records=[r for r in s.get("r", []) if r in recs]) for s in SIDE if s["k"] == k],
+            docs=[dict(img=d["img"], caption=d.get("popis", "")) for d in docs_cfg if k in d.get("osoby", [])],
             children=[slugs[c] for c in [k // 2] + [a // 2 for a in aliases_of.get(k, [])] if k > 1 and c in slugs],
             also=[dict(k=a, rel=relation(a), line=line_of(a), child=slugs.get(a // 2)) for a in aliases_of.get(k, [])],
         )
         if aliases_of.get(k):
             for a in aliases_of[k]:
-                people[slugs[k]]["records"] = list(dict.fromkeys(people[slugs[k]]["records"] + [r for r in P[a].get("r", []) if r in recs]))
+                people[slugs[k]]["records"] = list(dict.fromkeys(people[slugs[k]]["records"] + [r for r in P.get(a, {}).get("r", []) if r in recs]))
             people[slugs[k]]["facts"] = [f for f in people[slugs[k]]["facts"] if not f.startswith("TÁŽ OSOBA")]
 
     families = {}
@@ -320,7 +331,7 @@ def main():
             continue
         fs, ms = slugs.get(f), slugs.get(m)
         fid = "-a-".join(x for x in (fs, ms) if x) if fs and ms else (fs or ms) + "-rodina"
-        surname = (P[m]["n"].split()[-1] if m in P else "").strip("()?")
+        surname = ((P[m]["n"].split() or [""])[-1] if m in P else "").strip("()?")   # i zástupná matka bez jména
         mfacts = [x for x in P.get(f, {}).get("f", []) + P.get(m, {}).get("f", []) if x.startswith("×")]
         marriage = [x for x in mfacts if surname and surname[:5] in x] or mfacts
         frec = P.get(f, {}).get("r", []) + P.get(m, {}).get("r", [])
@@ -363,7 +374,11 @@ def main():
         members = [(p["k"], p) for p in people.values() if p["line"] == k]
         members += [(a["k"], p) for p in people.values() for a in p["also"] if a["line"] == k]
         members.sort(key=lambda x: x[0])
-        lines[slugify(name)] = dict(k=k, slug=slugify(name), name=name, desc=desc, color=LINE_COLORS[k],
+        ls = slugify(name)
+        if ls in lines:   # dva rody stejného jména (např. Novákové z obou stran) – jinak by jeden tiše zmizel
+            print(f"POZOR: rody {lines[ls]['k']} a {k} mají stejný název „{name}“ – rozliš je v LINES (data/osoby.py)")
+            ls = f"{ls}-{k}"
+        lines[ls] = dict(k=k, slug=ls, name=name, desc=desc, color=LINE_COLORS[k],
                                     root=slugs.get(k), people=[p["slug"] for _, p in members],
                                     gens={p["slug"]: gen(kk) for kk, p in members})
     lines = {s: l for s, l in lines.items() if l["root"]}
@@ -391,16 +406,20 @@ def main():
     stats = dict(ancestors=len(known), documented=sum(p["st"] == "doc" for p in known), records=len(records),
                  generations=max(p["gen"] for p in people.values()) + 1)
     hypotheses = [dict(line=h.get("rod"), title=h.get("nadpis", "Hypotéza"), text=h.get("text", ""),
-                       items=[dict(name=a, text=b) for a, b in h.get("polozky", [])],
-                       records=[r for r in h.get("zaznamy", []) if r in recs]) for h in ns["HYPOTEZY"]]
+                       items=[dict(name=x[0], text=x[1]) for x in h.get("polozky", [])
+                              if isinstance(x, (tuple, list)) and len(x) == 2],
+                       records=[r for r in h.get("zaznamy", []) if r in recs])
+                  for h in ns["HYPOTEZY"] if isinstance(h, dict)]   # jiný zápis hlásí kontrola.py
 
     has_story = os.path.exists(os.path.join(DATA, "pribeh.md"))
     public_cfg = {k: v for k, v in cfg.items() if k != "prihlaseni"}
     public_cfg["maPribeh"] = has_story
     site = dict(config=public_cfg, places=places, root=slugs[1], aliases={a: slugs[a] for a in SAME}, people=people,
                 families=families, records=records, lines=lines,
-                issues=[dict(title=i, text="") if isinstance(i, str) else dict(title=i[0], text=i[1]) for i in ISSUES], stats=stats, hypotheses=hypotheses,
-                docs=[dict(img=d["img"], caption=d["popis"], people=[slugs[k] for k in d.get("osoby", []) if k in slugs])
+                issues=[dict(title=i, text="") if isinstance(i, str) else dict(title=i[0], text=i[1]) for i in ISSUES
+                        if isinstance(i, str) or (isinstance(i, (tuple, list)) and len(i) == 2)],   # jiné hlásí kontrola.py
+                stats=stats, hypotheses=hypotheses,
+                docs=[dict(img=d["img"], caption=d.get("popis", ""), people=[slugs[k] for k in d.get("osoby", []) if k in slugs])
                       for d in docs_cfg if os.path.exists(os.path.join(VYREZY, d["img"] + ".jpg"))])
 
     # Číst zdrojové texty, ne starý site.json ani soubory z předchozího exportu.
@@ -420,10 +439,10 @@ def main():
     gen_dir = os.path.join(WEB, "src", "generated")
     for src, dst in (("archivni_dotazy.md", "dotazy.md"), ("research_log.md", "denik.md"), ("zajimavosti.md", "zajimavosti.md")):
         path = os.path.join(DATA, src)
-        text = open(path, encoding="utf-8").read() if os.path.exists(path) else ""
+        text = open(path, encoding="utf-8-sig").read() if os.path.exists(path) else ""
         write(os.path.join(gen_dir, dst), strip_comments(re.sub(r"^# .*\n", "", text, count=1)))
     story = os.path.join(DATA, "pribeh.md")
-    write(os.path.join(gen_dir, "pribeh.md"), strip_comments(open(story, encoding="utf-8").read()) if has_story else "---\ntitle: Příběh\nlead: ''\n---\n")
+    write(os.path.join(gen_dir, "pribeh.md"), strip_comments(open(story, encoding="utf-8-sig").read()) if has_story else "---\ntitle: Příběh\nlead: ''\n---\n")
 
     hrefs = os.path.join(gen_dir, "fan_hrefs.json")
     json.dump({k: f"/osoba/{s}/" for k, s in slugs.items()}, open(hrefs, "w", encoding="utf-8", newline="\n"))

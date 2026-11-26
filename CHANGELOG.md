@@ -6,9 +6,9 @@ dá v repozitáři **Watch → Custom → Releases**.
 
 Projekt založený starší verzí Claude sám nabídne aktualizovat (pozná to podle souboru `VERZE`).
 
-## 0.9.2-xsigik – 6. 11. 2026
+## 0.11.2-xsigik – 26. 11. 2026
 
-Fork xsigik/rodokmen-skill postavený na původní verzi 0.9.1 (sekce níže). Oproti ní má navíc:
+Fork xsigik/rodokmen-skill postavený na původní verzi 0.11.1 (sekce níže). Oproti ní má navíc:
 
 **Nové**
 - Codex a OMP: instalace, pokyny pro agenta v `AGENTS.md` (starý `CLAUDE.md` projektu se přejmenuje).
@@ -22,15 +22,173 @@ Fork xsigik/rodokmen-skill postavený na původní verzi 0.9.1 (sekce níže). O
 
 **Opravy**
 - Kontrola nové verze (`verze.py`) se ptá na vydání forku (xsigik/rodokmen-skill) a rozumí verzím `-xsigik`;
-  poradí i aktualizaci v OMP a Codexu. Pojistka proti aktualizaci starším skillem počítá s verzemi forku.
-- Vybledlé snímky: místo vlastního `--vylepsit` je `--kontrast` z původního skillu (`vyrez.py`, `overit.py`).
-- Při aktualizaci projektu forku bez brzdy (starší než 0.8.0-xsigik) se agent zeptá i na hlídač sítě.
+  podle místa instalace poradí aktualizaci v OMP, Codexu, nebo Claude Code. Pojistka proti aktualizaci starším
+  skillem počítá s verzemi forku.
 
 **Návody**
+- `reference/instalace.md` (nově z původního skillu) doplněný pro Codex a OMP: `AGENTS.md`, síť v Codexu,
+  vestavěný prohlížeč OMP, hlídač jen v Claude Code. ZA Opava v OMP jen přes propojení s Chromem uživatele.
 - Šablona zadání pro pomocníky (`reference/zadani_pomocnika.md`) a pole `orientace` u svazků (#5, #6).
 - FamilySearch v Chromu uživatele (Claude in Chrome, OMP přes relay) pro slovenské a uherské matriky (#8, #17).
 - Těšínsko: ZA Opava, evangelické sbory, polská a slovenská strana, 1939–1945 (#14).
 - Místo `nahledy.py` je `mapa_knihy.py` z původního skillu.
+
+## 0.11.1 – 25. 11. 2026
+
+Opravná verze: drobné opravy nástrojů a nový pomocník pro skok na folio v knize.
+
+**Nové**
+- `folio.py` – ze 2–3 dvojic snímek=folio, které už v knize znáš, odhadne snímek pro hledané folio nebo stranu
+  (`--pagina`); zvládne i knihy, kde se posun mezi foliem a snímkem mění oddíl od oddílu (knihy po vsích, vlepené listy).
+
+**Opravy**
+- `vyrez.py` odmítne vstup, který je zároveň jeho výstupem (`zdroje/<klíč>.jpg`) – dřív ho přepsal výřezem a další
+  oprava ořezávala už oříznutý obrázek.
+- `mista.py` při chybě geokodéru (HTTP 5xx, 629, výpadek sítě) jednou počká a zkusí to znovu; když to nepomůže, uloží
+  místa dohledaná do té doby a skončí jednou srozumitelnou větou místo výpisu chyby. Malou osadu, kterou OpenStreetMap
+  nenajde, přidá `mista.py pridej "Název" --souradnice 49.6512,15.2031`.
+
+**Návody**
+- Upřesňující úpravy v `portaly.md` a `matriky.md`.
+
+## 0.11.0 – 24. 11. 2026
+
+Hlavní změny: **export rodokmenu do GEDCOM** (i do vlastního stromu na MyHeritage) a nový postup pro **ZA Opava
+a AHMP Praha**, které nástroje ani Playwright nepouštějí – čtení v Claude in Chrome, celý snímek z mezipaměti
+prohlížeče.
+
+**Nové**
+- Export do GEDCOM 5.5.1 (`tools/ged_export.py`) – osoby, zápisy s citacemi a výřezy, svazky, místa i dokumenty;
+  ZIP s obrázky, nebo rozbalená složka pro Family Tree Builder (cesta do MyHeritage i s obrázky). Žijící a nedávno
+  zemřelí jsou jen „Žijící / Chráněná osoba“, pokud uživatel výslovně nechce jinak. Claude export nabídne sám,
+  když zmíníte MyHeritage, Ancestry, Geni nebo test DNA (#246, #33; díky Tomáši Krausovi).
+- Sloučení s vlastním stromem na MyHeritage: osoby si pamatují ID z importovaného stromu a `ged_export.py --rozdil`
+  vyveze jen nové předky a místa napojení, s přehledem ke kontrole před importem do Family Tree Builderu (#247).
+- `cache.py z-chromu` složí celý snímek ZA Opava nebo AHMP z dlaždic, které si prohlížeč snímků sám načetl do
+  mezipaměti Chromu – archiv nedostane žádný dotaz navíc.
+
+**Opravy**
+- Brzda už nezastaví Českou digitální knihovnu (`api.ceskadigitalniknihovna.cz`) kvůli 403 u neveřejného díla.
+- `ahmp_scan.py` a `ahmp_search.sh` po sobě mažou dočasné složky – v `/tmp` jich dřív zůstávaly tisíce (#220).
+- `napady.py` už nebere datum zdroje v závorce za datum události („dožil se 131 let“).
+- Hlídač sítě pozná i `python3.11` a podobné.
+- `policie_prihlasky.py` najde i karty s příponou `.JPG`.
+
+**Návody**
+- **ZA Opava:** jen v Claude in Chrome (Playwright od listopadu ochrana proti robotům nepustí). Čtení ze snímku
+  obrazovky přiblíženého zápisu, celý snímek volitelně z mezipaměti prohlížeče. Tlačítko „Uložit obrázek“
+  v badatelně nefunguje (chyba na straně archivu).
+- **AHMP Praha:** starý katalog katalog.ahmp.cz archiv 30. 11. 2026 ukončuje – do té doby fungují nástroje, pak nový
+  Archivní katalog digi.ahmp.cz jen v Claude in Chrome (stejný postup jako ZA Opava).
+
+## 0.10.2 – 16. 11. 2026
+
+Opravná verze: bezpečnější založení a aktualizace projektu, správný požadavek na Node a pravidla, aby chybné „není
+tam“ od pomocníka neschovalo předka.
+
+**Opravy**
+- Založení a aktualizace projektu už nemůžou zapsat mimo projekt, když je `.claude/` nebo `.skill_verze` symbolický
+  odkaz jinam (#193). Komentář v hlídači sítě, který skener Hermes Agent mylně bral jako nebezpečný kód, je
+  přeformulovaný.
+- Web potřebuje Node 22.12 nebo novější (Astro 7) – návod chtěl jen Node 20 a s ním web nešel sestavit. `npm run data`
+  teď starší Node hned srozumitelně ohlásí.
+- `kontrola.py` upozorní na hypotézu (`HYPOTEZY`) zapsanou jinak než `dict(…)` – export webu na ní padal.
+- Brzda už nezastaví celý Kramerius na hodiny kvůli HTTP 403 u neveřejného díla (OCR, stránky, obrázky) – to není
+  blokace, dílo jen není volně dostupné.
+
+**Návody**
+- Záporný výsledek pomocníka („prošel jsem snímky 20–60, není tam“) Claude přijme jen s dokladem – první a poslední
+  jméno a data z každého snímku, čtené ve zvětšení – a v deníku rozliší úsek prošlý s dokladem a jen orientačně.
+  Chybné „není“ dřív mohlo předka schovat natrvalo.
+
+## 0.10.1 – 13. 11. 2026
+
+Hlavní změna: **ZA Opava a SOA Praha omezily automatizovaný přístup.** ZA Opava od listopadu nepouští nástroje ani
+k obrázkům a na úvodní stránce upozorňuje na limity provozu. SOA Praha oznámila „automatizovaná bezpečnostní opatření
+a limity“ v eBadatelně. Obě badatelny dál fungují v prohlížeči tempem člověka – ověřil jsem to 13. 11. – a návody
+podle toho upravil. U Opavy je nově doporučený prohlížeč Playwright, protože jen v něm jde uložit celý snímek.
+
+**Nové**
+- ZA Opava: celý snímek přes Playwright. Prohlížeč snímků stránku sám přiblíží a projde, úryvek z dlaždic, které
+  přitom načetl, složí celý snímek – archiv nedostane žádný dotaz navíc a snímek se dál čte z disku. Uloží se do
+  sdílené mezipaměti, takže se stejný snímek podruhé neotvírá (#191).
+- `zapis.py --prepsat` nahradí položku celou, i když náhrada některá pole nemá.
+
+**Opravy**
+- ZA Opava: `soal_zoomify.py` pro Opavu skončí srozumitelnou hláškou s náhradním postupem a brzda skripty na archiv
+  zastaví – dřív končil výpisem chyby na HTTP 404 a návod ho pořád doporučoval (#191). Pro SOA Litoměřice nástroj
+  funguje dál.
+- Lokální web: `npm run nahled` už nehlásí „Another astro preview server is already running“, když běží náhled, který
+  pustil Claude (#186).
+- `zapis.py` už tiše nepřepíše existující položku kratší verzí – když by se ztratila pole (třeba podrobný seznam obcí
+  svazku), nic nezmění a vypíše je.
+- `kontrola.py` nově upozorní na překlad uložený pod jiným klíčem než `cs` (na webu se nezobrazil), na rodinný
+  dokument bez výřezu (na webu chyběl) a na chybně zapsanou položku `ISSUES`, na které spadl export webu.
+- `napady.py` nebere „† před 6/1919“ jako úmrtí v roce 1919 – už nevymýšlí španělskou chřipku ani dlouhověkost.
+- `ramecek.py` bez výřezu nespadne a nic nezapíše; `anno_snap.py` srozumitelně ohlásí, že dotaz v čísle novin nemá shodu.
+- Kontrola nové verze najde skill nainstalovaný k účtu v aplikaci Claude desktop i z kopie v projektu.
+
+**Návody**
+- SOA Praha: co dělat, když eBadatelna omezí i prohlížeč – skončit a čtení předat uživateli (#190).
+- ZA Opava: denní limit asi 50 snímků (po prvním odmítnutí ten den skončit), „Server Exception“ hned po CAPTCHA
+  limit není, žádné `fetch` na stránce. Matriky ZA Opava a pozemkové knihy Opavy a Olomouce jsou i na FamilySearch
+  v plném rozlišení – jak svazky spárovat a proč nikdy nepočítat s odhadnutým posunem snímků.
+
+## 0.10.0 – 10. 11. 2026
+
+Hlavní novinka: **přepracované návody.** SKILL.md, který Claude čte v každém sezení, je o třetinu kratší – podrobnosti
+k instalaci a importu stromu jsou v samostatných návodech, které čte, až je potřebuje. Anglickou metodickou příručku
+nahradila česká `metodika.md`: spojování záznamů, ztotožnění osob, co dělat, když se hledání zasekne, a prameny
+na Slovensku, v Rakousku, Polsku, Německu a Maďarsku. Pravidla, na kterých stojí kvalita, zůstala beze změny.
+
+**Nové**
+- Dva rodokmeny na jednom účtu Cloudflare: název webu jde nastavit v `web.json` (`cloudflare.web`, výchozí zůstává
+  „rodokmen“). Nasazení nově nepřepíše web jiného projektu – když na účtu web stejného jména už je, zastaví se a poradí.
+- Úvodní stránka webu na mobilu ukazuje jen vějíř (dřív vějíř i rodokmen pod sebou).
+- Vějíř: přibližování kolečkem je úměrné posunu, takže na touchpadu notebooku už neskáče (#165).
+- `zapis.py odkaz` přidá k osobě v `osoby.py` odkaz na zápis bez rizika rozbitých uvozovek.
+- Staré mapy z archivu ČÚZK: návod na ostrý výřez vsi z indikační skici ve vysokém rozlišení.
+
+**Opravy**
+- Windows: zápis dat přes vstup (`zapis.py … -`) už tiše nerozbíjí češtinu; nasazení na Cloudflare funguje i ze složky
+  s mezerou v cestě a kontrola soukromí webu na Netlify konečně proběhne. Prosím o zpětnou vazbu, na Windows jsem to
+  zkoušel jen nepřímo.
+- Brzda proti zablokování archivem chytí i adresu bez `https://`, víc adres nebo rozsah `[1-200]` v jednom `curl`
+  a vlastní výpis stavového kódu – dřív tudy mohly odejít dávky dotazů a odmítnutí archivu nezastavilo další.
+- ZA Opava: snímky se stahují pomaleji a při odmítnutí se nástroj zastaví místo opakování – po několika snímcích
+  rychle za sebou archiv blokoval.
+- Hlídač sítě nezamítá nevinné příkazy (text v uvozovkách v commitu nebo poznámce, `grep` vedle Pythonu).
+- Export webu nespadne na zástupné osobě bez jména, na opakovaném předkovi odkazujícím na neznámou osobu, na dokumentu
+  bez popisu ani na číselné odpovědi na přihlašovací otázku; dva rody stejného jména se na webu objeví oba.
+- Import rodinného stromu (GEDCOM) zvládne soubory v UTF-16 a sdílené poznámky a nezasekne se na chybě ve stromu.
+- `mista.py pridej` s novým dotazem obec znovu vyhledá – oprava stejnojmenné obce na mapě (#167).
+- Matricula: prošlý odkaz už neuloží chybovou stránku jako snímek.
+- Soubory dat s neviditelnou značkou BOM z Windows (Poznámkový blok, PowerShell) už nástroje neshodí.
+- Nástroje na `--help` a bez argumentů vypíšou nápovědu místo pádu (#157).
+
+**Návody**
+- Matriční úřad: zápis starší 100 / 75 / 30 let vydá komukoli i ze svazku, který je ještě na úřadě; mladší jen rodina
+  (§ 25b zákona o matrikách). Na Slovensku platí jiná pravidla (#150).
+- Pozemkové knihy jsou online i u SOA Třeboň a ZA Opava; doplněný slovníček latinských a německých výrazů.
+- Starší projekt se zapnutým hlídačem sítě se o nové verzi dozví i tehdy, když hlídač kontrolu zamítne.
+
+Děkuji všem za podrobné poznámky z praxe a za hotové návrhy oprav.
+
+## 0.9.2 – 7. 11. 2026
+
+**Opravy**
+- Kontrola nové verze z 0.9.1 u některých lidí neproběhla: hlídač sítě ji zablokoval (teď pustí skript, který se ptá
+  jen GitHubu) a kopie nástroje v projektu nenašla nainstalovaný skill (teď ho najde, a když ne, netvrdí „aktuální“).
+  U ručně nakopírovaného skillu radí stáhnout novou verzi z GitHubu místo příkazů pro plugin (#136).
+- Windows: hlídač sítě se po aktualizaci projektu nemusel spustit – v nastavení byl jen příkaz `python`, který
+  v prostředí Claude Code může vést na nefunkční zástupce z Microsoft Store. Teď je tam vždy plná cesta k Pythonu.
+- `npm install` ve `web/` už nehlásí závažnou zranitelnost (knihovna `undici`, používá ji jen sestavení webu).
+
+**Návody**
+- MZA Brno: snímky přes Playwright, ne vestavěný prohlížeč Claude desktop (dostává 403 i po pauze). Bílý snímek
+  s chybou 403 je blokace, ne pomalé načítání – Claude přestane a řekne to (#147).
+
+Děkuji všem za rychlá hlášení e-mailem i na GitHubu.
 
 ## 0.9.1 – 6. 11. 2026
 

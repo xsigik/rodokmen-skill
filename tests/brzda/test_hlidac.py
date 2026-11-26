@@ -37,9 +37,25 @@ with open(DAVKA, "w", encoding="utf-8") as f:
             "    subprocess.run([sys.executable, '-I', 'tools/aron_img.py', '123', str(n), '1', f'pracovni/x{n}.jpg'])\n")
 with open(VLASTNI, "w", encoding="utf-8") as f:
     f.write("import json, urllib.request\nprint(1)\n")
+GITHUB = os.path.join(POM, "jen_github.py").replace("\\", "/")    # síť jen na povolený web (jako tools/verze.py) → pustit
+with open(GITHUB, "w", encoding="utf-8") as f:
+    f.write("import json, urllib.request\nURL = 'https://api.github.com/repos/x/y/releases/latest'\n")
+SMISENY = os.path.join(POM, "github_a_archiv.py").replace("\\", "/")  # povolený web i archiv → zamítnout
+with open(SMISENY, "w", encoding="utf-8") as f:
+    f.write("import urllib.request\nA = 'https://api.github.com/x'\nB = 'https://aron.vychodoceskearchivy.cz/'\n")
 
 Z, P = "zamítnout", "pustit"
 PRIPADY = [
+    # 0.9.3: síťové slovo nebo curl jen v textu (grep, commit, poznámka) – pustit; skutečné spuštění – zamítnout
+    ("Bash", 'python3 -I tools/kontrola.py; grep -n "urlopen(" tools/*.py', P),
+    ("Bash", 'git commit -m "oprava; curl https://www.mza.cz/actapublica"', P),
+    ("Bash", 'echo "- hlídač: curl https://www.mza.cz zamítnut; import requests" >> poznamky_pro_skill.md', P),
+    ("Bash", 'echo "$(curl -s https://www.mza.cz/x)"', Z),
+    ("Bash", "echo `curl -s https://www.mza.cz/x`", Z),
+    ("Bash", 'eval "curl -s https://www.mza.cz/x"', Z),
+    ("Bash", 'echo "import urllib.request" | python3 -', Z),
+    ("Bash", "cat > pracovni/x.py <<'EOF'\nimport urllib.request\nEOF\npython3 pracovni/x.py", Z),
+    ("Bash", 'python3 -c "print(1)"; curl -s https://www.mza.cz/x', Z),
     # Bash – zamítnout
     ("Bash", "python -I -X utf8 -c \"import urllib.request; urllib.request.urlopen('https://aron.vychodoceskearchivy.cz')\"", Z),
     ("Bash", "python -I -X utf8 - <<'EOF'\nimport json, urllib.request\nprint(1)\nEOF", Z),
@@ -50,6 +66,9 @@ PRIPADY = [
     ("Bash", "wget https://example.com/a.jpg", Z),
     ("Bash", 'bash -c "curl -s https://example.com"', Z),
     ("Bash", f"python -I -X utf8 {VLASTNI}", Z),
+    ("Bash", f"python -I -X utf8 {SMISENY}", Z),
+    ("Bash", f"python3 -I {GITHUB} .", P),
+    ("Bash", f"python3 -I {os.path.join(SKILL, 'tools', 'verze.py')} .", P),
     ("Bash", 'curl -s "https://www.portafontium.eu/register/soap-pn?q=Plaňany"', Z),
     ("Bash", "curl -s https://rodokmen.svamberk.net/", Z),
     ("Monitor", "while true; do curl -s https://example.com/stav; sleep 1; done", Z),
@@ -57,6 +76,9 @@ PRIPADY = [
     ("Bash", 'python3 -c "import json, urllib.request; print(1)"', Z),
     ("Bash", "python3 -c 'import os; import requests'", Z),
     ("Bash", 'python3 -c "import json; print(42)"', P),
+    # 0.10.3: python3.X (python3.11, python3.12) – hlídač ho dřív neviděl
+    ("Bash", 'python3.11 -c "import urllib.request; print(1)"', Z),
+    ("Bash", 'python3.12 -c "import json; print(42)"', P),
     ("Bash", 'echo "import requests" >> pracovni/poznamka.txt', P),
     ("Bash", "python3 - <<'EOF'\nimport os, sys, requests\nEOF", Z),
     ("Bash", "python3 - <<'EOF'\nimport json as j, http.client\nEOF", Z),

@@ -324,10 +324,10 @@ MATCHER = "Bash|PowerShell|Monitor"   # Monitor spouští příkaz v bashi stejn
 
 
 def _python_windows():
-    """Python pro hook na Windows: z PATH (projde i projekt sdílený přes OneDrive na dvou počítačích), jinak plná cesta.
-    Zástupce z Microsoft Store (WindowsApps) se nepočítá – bez nainstalovaného Pythonu jen otevře obchod."""
-    p = shutil.which("python")
-    return "python" if p and "windowsapps" not in p.lower() else sys.executable
+    """Python pro hook na Windows: vždy plná cesta k Pythonu, kterým běží aktualizace. Hooky Claude Code mají jiný PATH
+    a „python“ tam může vést na nefunkční zástupce z Microsoft Store – hlídač by se tiše nespustil. Projekt sdílený
+    přes OneDrive na dvou počítačích opraví aktualizace spuštěná na druhém počítači (hook se pokaždé přepíše)."""
+    return sys.executable
 
 
 def hook_hlidace():
@@ -341,10 +341,13 @@ def hook_hlidace():
 def nastaveni(dst, hlidac):
     """Doplní do .claude/settings.json zákaz curl/wget; hlidac=True/False zapne/vypne hook, None nechá, jak je."""
     path = os.path.join(dst, ".claude", "settings.json")
+    if mimo(dst, path) or kolize(dst, path):   # .claude jako odkaz mimo projekt – nic nezapisovat
+        print("POZOR: .claude/settings.json nejde bezpečně zapsat – nastavení brzdy jsem nedoplnil.")
+        return
     data = {}
-    if os.path.exists(path):
+    if os.path.exists(path) and not os.path.islink(path):   # odkaz na cizí soubor nečíst, zapis() ho nahradí
         try:
-            data = json.load(open(path, encoding="utf-8"))
+            data = json.load(open(path, encoding="utf-8-sig"))
         except ValueError:
             print(f"POZOR: {path} není platný JSON – nastavení brzdy jsem nedoplnil. Oprav ho a spusť znovu.")
             return
@@ -364,10 +367,8 @@ def nastaveni(dst, hlidac):
         del data["hooks"]["PreToolUse"]
     if not data["hooks"]:
         del data["hooks"]
-    if json.dumps(data, sort_keys=True) != puvodni:
-        with open(path, "w", encoding="utf-8", newline="\n") as f:
-            json.dump(data, f, ensure_ascii=False, indent=2)
-            f.write("\n")
+    if json.dumps(data, sort_keys=True) != puvodni or os.path.islink(path):
+        zapis(path, (json.dumps(data, ensure_ascii=False, indent=2) + "\n").encode("utf-8"))   # odkaz nahradí, nepíše přes něj
     zapnuty = any("hlidac_site.py" in json.dumps(h) for h in data.get("hooks", {}).get("PreToolUse", []))
     print("Hlídač sítě:", "zapnutý" if zapnuty else "vypnutý (zapnout: --hlidac)")
 
@@ -437,11 +438,11 @@ def main():
         print("CLAUDE.md přejmenován na AGENTS.md.")
     for name in ("AGENTS.md", ".gitignore", ".gitattributes", "poznamky_pro_skill.md", os.path.join(".claude", "launch.json")):
         out = os.path.join(dst, name)
-        if not os.path.lexists(out):
+        if not os.path.lexists(out) and not mimo(dst, out) and not kolize(dst, out):   # ne přes odkaz mimo projekt
             copy(os.path.join(SKILL, "template", name), out)
     nastaveni(dst, True if "--hlidac" in sys.argv else False if "--bez-hlidace" in sys.argv else None)
-    with open(os.path.join(dst, ".skill_verze"), "w", encoding="utf-8") as f:   # SKILL.md podle něj nabídne aktualizaci
-        f.write(open(os.path.join(SKILL, "VERZE"), encoding="utf-8").read())
+    if not kolize(dst, os.path.join(dst, ".skill_verze")):   # SKILL.md podle něj nabídne aktualizaci; odkaz nahradí
+        zapis(os.path.join(dst, ".skill_verze"), cti(os.path.join(SKILL, "VERZE")))
     print("Projekt připraven:", dst)
     for k, popis in (("prepsano", "Přepsáno novou verzí (bez vlastních úprav)"),
                      ("zalohovano", "Přepsáno, původní verze je v " + os.path.join(zaloha, "puvodni")
