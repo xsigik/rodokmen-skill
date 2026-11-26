@@ -15,6 +15,8 @@ Trvalý odkaz na kartu:
 Pokrývá Prahu I–VIII. Smíchov, Vinohrady, Žižkov, Karlín ap. byly do 1922 samostatná města – tam přihlášky nejsou.
 """
 import html, re, sys, time, unicodedata, urllib.parse, urllib.request
+if len(sys.argv) < 2 or sys.argv[1] in ("-h", "--help"):   # nápověda místo pádu
+    sys.exit(__doc__.strip())
 import os as _os, sys as _sys; _sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__))); import slusne  # noqa: E402 – brzda proti zablokování archivem (společný limit dotazů, tools/slusne.py)
 for _s in (sys.stdout, sys.stderr):   # UTF-8 výstup i na Windows bez -X utf8 (cp1250 neumí třeba „→“)
     if hasattr(_s, "reconfigure"):
@@ -72,7 +74,7 @@ def over_kartu(h, poradi, prijmeni, jmeno, od, do, radek):
 
 def karta(session, poradi, out, overeni):
     h = get(f"{BASE}?session={session}&action=image&record={poradi}")
-    m = re.search(r'src="images/((\d+)-(\d+)\.jpg)"', h)
+    m = re.search(r'src="images/((\d+)-(\d+)\.jpg)"', h, re.I)   # i .JPG
     if not m:
         sys.exit(f"karta č. {poradi} nenalezena (je pořadí z tohoto hledání?)")
     lide = over_kartu(h, poradi, *overeni)

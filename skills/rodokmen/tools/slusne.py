@@ -26,8 +26,9 @@ Pravidla (pro každý web zvlášť, společně pro všechny procesy i projekty 
     Doména actapublica.eu MZA nepatří – skripty na ni taky ne.
   - SOA Třeboň (digi.ceskearchivy.cz) nástroj od 2. 11. 2026 odmítá: skripty nic, jen prohlížeč.
   - SOA Praha (soapraha.cz, eBadatelna) nástroj od 2. 11. 2026 zakazuje (robots.txt): skripty nic, jen prohlížeč.
+  - ZA Opava (archives.cz) od 11/2026 skripty nepouští (robots.txt, obrázky 403/404): skripty nic, jen prohlížeč.
 localhost, vlastní web (Netlify, Cloudflare), GitHub a npm se nebrzdí. V prohlížeči (Playwright, Claude in Chrome) brzda neplatí –
-tam aspoň 5–10 s mezi stránkami a žádné smyčky fetch / Promise.all (SKILL.md, Šetrně k archivům).
+tam aspoň 5–10 s mezi stránkami, žádné souběžné dotazy ani smyčky přes celé svazky (SKILL.md, Šetrně k archivům).
 Stav je v ~/.cache/rodokmen_slusne/ (Windows %LOCALAPPDATA%\\rodokmen_slusne), jen malé soubory JSON.
 """
 import http.client, io, json, os, re, shutil, socket, subprocess, sys, tempfile, threading, time
@@ -35,7 +36,7 @@ from urllib.parse import urlsplit
 
 DOTAZ, OBRAZEK = 2.0, 0.1            # výchozí rozestup v sekundách
 LIMITY = {                           # konec názvu webu: (dotaz, obrázek)
-    "archives.cz": (4.0, 0.1),       # ZA Opava (digi.archives.cz, images.archives.cz) – blokuje na 30 min
+    "archives.cz": (4.0, 0.3),       # ZA Opava (digi.archives.cz, images.archives.cz) – blokuje na 30 min, obrázky po ~6 snímcích 403
     "nominatim.openstreetmap.org": (1.1, 1.1),   # pravidla Nominatimu: nejvýš 1 dotaz za s
     "mza.cz": (4.0, 4.0),            # MZA Brno – skriptem jen hledání knih (ZAKAZ níže), blokuje i za rychlé dotazy na katalog
     "digi.nacr.cz": (4.0, 4.0),      # Národní archiv (policejní přihlášky) – po pár rychlých kartách přiškrcuje podle IP
@@ -64,6 +65,19 @@ ZAKAZ["soapraha.cz"] = (            # SOA Praha (eBadatelna): od 2. 11. 2026 rob
     "SOA Praha (eBadatelna) od 2. 11. 2026 nástroj rodokmen zakazuje (robots.txt, HTTP 403) – ebadatelna.py ani vlastní "
     "skripty nepoužívej. Matriky čti v prohlížeči eBadatelny: výřez zápisu ze snímku, který prohlížeč načetl, a snímek "
     "obrazovky (reference/portaly.md, SOA Praha). Neobcházej to (jiný User-Agent, nástroj, hlavičky).")
+ZAKAZ["archives.cz"] = (            # ZA Opava: robots.txt „Disallow: /“, od 11/2026 obrázky skriptům 403/404, jen prohlížeč
+    re.compile(r"(?!)"),             # skriptům nic
+    "ZA Opava (digi.archives.cz, images.archives.cz) od listopadu 2026 nástroje nepouští (robots.txt, obrázky "
+    "HTTP 403/404) – soal_zoomify.py ani vlastní skripty nepoužívej. Čti v Claude in Chrome: snímek obrazovky "
+    "přiblíženého zápisu, celý snímek z mezipaměti prohlížeče (cache.py z-chromu) – reference/portaly.md, ZA Opava. "
+    "Neobcházej to (jiný User-Agent, nástroj, hlavičky).")
+for _h in ("digi.ahmp.cz", "digi-images.ahmp.cz"):   # AHMP – nový Archivní katalog: robots.txt „Disallow: /“, ochrana proti robotům
+    ZAKAZ[_h] = (
+        re.compile(r"(?!)"),
+        "Nový Archivní katalog AHMP (digi.ahmp.cz) nástroje nepouští (robots.txt, ochrana proti robotům, zákaz "
+        "automatizace na úvodní stránce). Čti v Claude in Chrome: snímek obrazovky přiblíženého zápisu, celý snímek "
+        "z mezipaměti prohlížeče (cache.py z-chromu) – reference/portaly.md, AHMP. Neobcházej to (jiný User-Agent, "
+        "nástroj, hlavičky).")
 VOLNE = ("localhost", "127.0.0.1", "::1", "0.0.0.0", "netlify.app", "netlify.com", "workers.dev", "cloudflare.com", "github.com",
          "githubusercontent.com", "npmjs.org", "pypi.org", "pythonhosted.org")
 UA = "Mozilla/5.0 (rodokmen)"           # jak se představuje slusne.py curl (stejně jako nástroje)
@@ -282,11 +296,21 @@ def _spojeni_selhalo(host, e):
         zastav(host, f"3 nepovedená spojení za sebou ({type(e).__name__}) – archiv neodpovídá nebo nás zablokoval")
 
 
-def kontroluj_odpoved(host, status, obrazek, telo=None):
+# Kramerius: 403 u stránek, OCR a obrázků neveřejného díla (autorský zákon, licence) není blokace – dílo jen není
+# volně dostupné; zastavit kvůli němu celý web na hodiny by zastavilo i veřejná díla.
+KRAMERIUS = re.compile(r"kramerius|(^|\.)(ndk|digitalniknihovna|ceskadigitalniknihovna)\.cz$", re.I)   # CDK: api.ceskadigitalniknihovna.cz
+KRAMERIUS_DILO = re.compile(r"/(item|uuid)[/:].*/(ocr|streams|full|image|thumb|preview|foxml)|/iiif/|/ocr\b|/img\b", re.I)
+
+
+def kontroluj_odpoved(host, status, obrazek, telo=None, cesta=None):
     skupina, _ = _skupina(host)
     if not skupina:
         return
     _selhani.pop(skupina, None)
+    if status == 403 and cesta and KRAMERIUS.search(host or "") and KRAMERIUS_DILO.search(cesta):
+        print(f"slusne: HTTP 403 u {host} – dílo není veřejně dostupné (licence), nejde o blokaci; web nezastavuji. "
+              "Neveřejná díla jdou číst jen v badatelně knihovny.", file=sys.stderr)
+        return
     if status in (429, 503) or (status == 403 and not obrazek):
         zastav(host, f"HTTP {status}")
     vzor = BAN_TEXT.get(skupina)
@@ -368,6 +392,7 @@ def _zapni():
 
     def putrequest(self, method, url, *a, **k):
         self._slusne_obr = je_obrazek(url)
+        self._slusne_cesta = url
         self._slusne_disk = self._slusne_ulozit = None
         zakaz(_host(self), url)
         if _mezipamet and method == "GET" and self._slusne_obr and _skupina(_host(self))[0]:
@@ -416,7 +441,7 @@ def _zapni():
         if skupina in BAN_TEXT and r.status == 200 and "html" in (r.getheader("Content-Type") or ""):
             telo = r.read()             # přečíst a vrátit zpět, aby volající dostal celé tělo
             r.fp, r.length, r.chunked, r.will_close = io.BytesIO(telo), len(telo), False, True
-        kontroluj_odpoved(host, r.status, obr, telo)
+        kontroluj_odpoved(host, r.status, obr, telo, getattr(self, "_slusne_cesta", None))
         plna = getattr(self, "_slusne_ulozit", None)
         if plna and r.status == 200 and not r.getheader("Content-Encoding"):
             delka = r.getheader("Content-Length")
@@ -523,22 +548,84 @@ def _bash_cesta():
     return "bash"
 
 
+# přepínače curlu, které berou hodnotu (ta pak není adresa); krátké se dají slučovat („-sSLo soubor“)
+_CURL_HODNOTA = {"--output", "--header", "--user-agent", "--data", "--data-raw", "--data-binary", "--data-urlencode",
+                 "--data-ascii", "--json", "--referer", "--user", "--proxy", "--write-out", "--cookie", "--cookie-jar",
+                 "--request", "--upload-file", "--form", "--form-string", "--max-time", "--range", "--config",
+                 "--connect-timeout", "--retry", "--retry-delay", "--retry-max-time", "--limit-rate", "--continue-at",
+                 "--output-dir", "--resolve", "--connect-to", "--cacert", "--capath", "--cert", "--key", "--dump-header",
+                 "--speed-limit", "--speed-time", "--max-filesize", "--max-redirs", "--time-cond", "--interface",
+                 "--proto", "--proto-redir", "--stderr", "--trace", "--trace-ascii", "--etag-save", "--etag-compare"}
+_CURL_KRATKE = set("oHAdeuxwbcXTFmrKCDEYyz")
+_HOLY_HOST = re.compile(r"(?i)^[a-z0-9-]+(\.[a-z0-9-]+)+\.?(:\d+)?([/?#].*)?$")   # www.mza.cz/… bez https://
+
+
+def _curl_adresy(args):
+    """Adresy v příkazu curl: [(index, adresa pro brzdu)]; adresa bez schématu dostane http:// (curl ji tak bere)."""
+    out, i = [], 0
+    while i < len(args):
+        a = args[i]
+        if a == "--url" and i + 1 < len(args):
+            u = args[i + 1]
+            out.append((i + 1, u if "://" in u else "http://" + u))
+            i += 2
+            continue
+        if a.startswith("--url="):
+            u = a[6:]
+            out.append((i, u if "://" in u else "http://" + u))
+        elif a.startswith("--"):
+            if a in _CURL_HODNOTA:
+                i += 1
+        elif a.startswith("-") and len(a) > 1:
+            k = a[1:]
+            for j, c in enumerate(k):
+                if c in _CURL_KRATKE:
+                    if j == len(k) - 1:
+                        i += 1   # hodnota je další argument
+                    break        # jinak je hodnota přilepená („-ofile“)
+        elif re.match(r"(?i)https?://", a):
+            out.append((i, a))
+        elif _HOLY_HOST.match(a):
+            out.append((i, "http://" + a))
+        i += 1
+    return out
+
+
 def _curl(args):
     real, umi_stderr = _najdi_curl()
     if not any(a in ("-A", "--user-agent") or a.startswith("--user-agent=") or re.match(r"(?i)\s*user-agent\s*:", a)
                for a in args):
         args = ["-A", UA, *args]   # představit se jako nástroje; výchozí „curl/…“ některé archivy odmítají (403)
-    urls = [a for a in args if re.match(r"https?://", a)]
+    urls = [u for _, u in _curl_adresy(args)]
+    if len(urls) > 1:   # curl by je poslal hned za sebou, brzda by nestihla čekat ani zastavit
+        print("slusne: jeden curl = jedna adresa. Víc snímků stahuj postupně (každý zvlášť přes brzdu).", file=sys.stderr)
+        return 2
+    globoff = any(a in ("-g", "--globoff") or (re.match(r"-[a-zA-Z]+$", a) and "g" in a) for a in args)
+    if urls and not globoff and re.search(r"[\[\]{}]", urls[0]):   # rozsah [1-200] / {a,b} = mnoho dotazů naráz
+        print("slusne: rozsahy [..] a {..} v adrese nejdou (curl by je stáhl všechny naráz). Stahuj snímky postupně, "
+              "nebo je-li závorka v adrese doslova, přidej -g.", file=sys.stderr)
+        return 2
     for u in urls:
         pockej(u)
-    vlastni_w = any(a in ("-w", "--write-out") or a.startswith("--write-out=") for a in args) or not umi_stderr
-    extra = [] if vlastni_w else ["-w", "%{stderr}\n@@slusne %{http_code} %{url_effective}\n"]
+    # vlastní -w: brzda ho spojí se svou značkou (curl použije jen poslední -w); -w @soubor a starý curl beze značky
+    znacka = "%{stderr}\n@@slusne %{http_code} %{url_effective}\n"
+    w_poz = [i for i, a in enumerate(args) if a in ("-w", "--write-out") or a.startswith("--write-out=")]
+    vlastni = None
+    if w_poz:
+        i = w_poz[-1]
+        vlastni = args[i][len("--write-out="):] if args[i].startswith("--write-out=") else (args[i + 1] if i + 1 < len(args) else "")
+        if not vlastni.startswith("@"):
+            args = [a for j, a in enumerate(args) if j not in w_poz and not (j - 1 in w_poz and not args[j - 1].startswith("--write-out="))]
+    if not umi_stderr or (vlastni or "").startswith("@"):
+        extra = []
+    else:
+        extra = ["-w", (vlastni or "") + znacka]
     p = _bez_prepisu(subprocess.run, [real, *args, *extra], stderr=subprocess.PIPE)
     err = p.stderr.decode("utf-8", "replace").replace("\r\n", "\n")   # curl na Windows píše do stderr \r\n
     kody = re.findall(r"^@@slusne (\d+) (\S*)$", err, re.M)
     sys.stderr.write(re.sub(r"\n?@@slusne \d+ \S*\n", "", err))
     for kod, url in kody:
-        kontroluj_odpoved(urlsplit(url).hostname, int(kod), je_obrazek(url))
+        kontroluj_odpoved(urlsplit(url).hostname, int(kod), je_obrazek(url), cesta=urlsplit(url).path)
     if p.returncode in (7, 28, 35, 56) and urls:   # nepřipojil se / timeout / spojení přerušeno
         _spojeni_selhalo(urlsplit(urls[0]).hostname, ConnectionError(f"curl kód {p.returncode}"))
     return p.returncode
@@ -659,6 +746,8 @@ def main(argv):
     for s in (sys.stdout, sys.stderr):   # hlášky česky i na Windows bez -X utf8 (např. z curl() v ahmp_search.sh)
         if hasattr(s, "reconfigure"):
             s.reconfigure(encoding="utf-8", errors="replace")
+    if hasattr(sys.stdin, "reconfigure"):   # kód ze vstupu („slusne.py -“) je UTF-8, na Windows ne cp1250
+        sys.stdin.reconfigure(encoding="utf-8-sig")
     if not argv or argv[0] in ("-h", "--help"):
         print(__doc__)
         return 0

@@ -9,12 +9,12 @@ Matriky jsou online u osmi státních archivů – podle toho, **kde předci ži
 | SOA Plzeň | západní Čechy | Porta fontium – portafontium.eu | **ano – nástroj `portafontium.py`** |
 | SOA Třeboň | jižní Čechy | digi.ceskearchivy.cz | **jen v prohlížeči** – archiv nástroj od 2. 11. 2026 odmítá (postup níže) |
 | SOA Litoměřice | severní Čechy | Digitální badatelna – digi.soalitomerice.cz | **částečně – `soal_zoomify.py`** (knihu najdi v prohlížeči) |
-| AHMP | hl. m. Praha | katalog.ahmp.cz (Pragapublica) | **ano – `ahmp_search.sh`, `ahmp_scan.py`** |
+| AHMP | hl. m. Praha | do 30. 11. 2026 katalog.ahmp.cz, pak Archivní katalog digi.ahmp.cz/pragapublica | **do 30. 11. 2026 `ahmp_search.sh`, `ahmp_scan.py`**, pak jen v prohlížeči (Claude in Chrome, postup jako ZA Opava) |
 | MZA Brno | jižní Morava, Vysočina z části | Acta Publica – www.mza.cz/actapublica | **jen v prohlížeči** – snímek obrazovky přiblíženého zápisu (postup níže) |
-| ZA Opava | severní Morava a Slezsko, Olomoucko a Litovelsko | Digitální badatelna – digi.archives.cz/da/ | **částečně – `soal_zoomify.py`** (jen s prohlížečem, CAPTCHU řeší uživatel) |
+| ZA Opava | severní Morava a Slezsko, Olomoucko a Litovelsko | Digitální badatelna – digi.archives.cz/da/ | **jen v prohlížeči, Claude in Chrome** – snímek obrazovky přiblíženého zápisu, celý snímek z mezipaměti prohlížeče (postup níže; CAPTCHU řeší uživatel) |
 | Národní archiv | židovské matriky (HBMa), soupisy; pražské policejní přihlášky 1850–1914 | HBMa: VadeMeCum NA – vademecum.nacr.cz (Digitální badatelna → Matriky židovských náboženských obcí; stará adresa badatelna.eu už nepatří archivu); digi.nacr.cz/prihlasky2 | přihlášky **ano – `policie_prihlasky.py`** |
 
-Adresy u nevyzkoušených portálů ověř při prvním použití (portály se mění). Pro pohraničí a mimo ČR viz `playbook.md` §2
+Adresy u nevyzkoušených portálů ověř při prvním použití (portály se mění). Pro pohraničí a mimo ČR viz `metodika.md`
 (Matricula pro Rakousko/Německo, Geneteka pro Polsko, FamilySearch pro Slovensko a Uhry) a níže.
 
 **Claude in Chrome – výstup JavaScriptu** (platí pro všechny portály):
@@ -81,7 +81,7 @@ Adresy u nevyzkoušených portálů ověř při prvním použití (portály se m
   }
   ```
   Souřadnice ber vždy z aktuálního snímku okna (po načtení stránky nebo `vp.reset()`), ne ze staršího.
-- Svazek do `svazky.json` ručně (Ostatní portály, krok 4, klíč `trebon_<kniha>`).
+- Svazek do `svazky.json` přes `zapis.py` (Ostatní portály, krok 4, klíč `trebon_<kniha>`).
 - Některé fary mají knihy po vesnicích, které nejsou v seznamu knih místa (Vacov → Žár) – hledej podle titulků knih fary.
 - **Civilní matriky (1920–1945) lidí bez vyznání** jsou v knihách okresních úřadů (např. Tábor, kniha 12304) a mají
   dobrovolnický rejstřík. Dobrá cesta, když farní matrika mlčí. U obce se neukážou (patří okresu) – hledej u okresního města.
@@ -123,6 +123,10 @@ Adresy u nevyzkoušených portálů ověř při prvním použití (portály se m
   (`*i`, `ooi`, `+i` v seznamu knih fary).
 
 ## SOA Praha (eBadatelna, ebadatelna.soapraha.cz) – jen v prohlížeči
+- **Od listopadu 2026 archiv omezuje i automatizovaný provoz** (oznámení na úvodní stránce: „automatizované bezpečnostní
+  opatření a limity“). Čtení v prohlížeči tempem člověka dál funguje (ověřeno 13. 11. 2026 v Playwrightu). Narazíš-li
+  na stránku s omezením, „Forbidden“ nebo snímek, který se nenačte, skonči: `python3 -I tools/slusne.py zastav
+  ebadatelna.soapraha.cz "omezení v prohlížeči"` a čtení předej uživateli.
 - **Od 2. 11. 2026 archiv nástroj zakazuje** (robots.txt „User-agent: rodokmen – Disallow: /“, HTTP 403),
   `ebadatelna.py` stahovat nesmí (fungují `link`, `a-link` a `snimek` ze snímků uložených z prohlížeče) a brzda
   skripty na soapraha.cz zastaví. Neobcházej to (jiný User-Agent, vlastní skript, fetch). Matriky čti v prohlížeči
@@ -165,18 +169,33 @@ Adresy u nevyzkoušených portálů ověř při prvním použití (portály se m
   Bez Playwrightu (Claude in Chrome neumí výsledek uložit do souboru) ať snímek uloží uživatel (snímek obrazovky).
 - Starší snímky bývají z mikrofilmu nebo silně vybledlé – výřez dělej s `--kontrast` (`vyrez.py`, `overit.py`;
   viz `matriky.md`, Čtení písma) a poznamenej to v přepisu.
-- Svazek do `svazky.json` ručně (Ostatní portály, krok 4, klíč `ebad_<matrikaId>`, archiválie `ebad_a_<id>`).
+- Svazek do `svazky.json` přes `zapis.py` (Ostatní portály, krok 4, klíč `ebad_<matrikaId>`, archiválie `ebad_a_<id>`).
   Denní údržba portálu kolem 4:44 (asi 2 minuty); večer a v noci bývá nedostupná (zhruba 22:45–0:45 a kolem 2:00).
 
-## AHMP Praha – `tools/ahmp_search.sh`, `tools/ahmp_scan.py`
+## AHMP Praha – do 30. 11. 2026 nástroje, pak jen v prohlížeči (Claude in Chrome)
+**Starý katalog katalog.ahmp.cz archiv 30. 11. 2026 ukončuje** (oznámení na katalogu a na www.ahmp.cz, novinka
+z 25. 8. 2026); nástroje pak skončí hláškou. Do té doby:
 - `bash tools/ahmp_search.sh "Smíchov"` → svazky Sbírky matrik: popis | farnost | (XID, id, počet snímků).
 - `python3 -I tools/ahmp_scan.py <XID> <snímek> pracovni/x.jpg [1] [x0,y0,x1,y1]` → snímek (1 = poloviční rozlišení).
-- Trvalý odkaz `https://katalog.ahmp.cz/pragapublica/permalink?xid=<XID>&scan=<N>`.
-- Nový portál digi.ahmp.cz má ochranu proti robotům – nepoužívat. Pražské matriky 1890–1940 většinou **nemají rejstříky**
-  a farností je mnoho – bez přesného data a farnosti (z úmrtí/sňatku nebo od rodiny) je hledání velmi drahé.
+- Trvalý odkaz `https://katalog.ahmp.cz/pragapublica/permalink?xid=<XID>&scan=<N>` – archiv slibuje, že staré odkazy
+  přesměruje do nového katalogu (zatím neověřeno, jestli i na stejný snímek).
+
+**Nový Archivní katalog `https://digi.ahmp.cz/pragapublica/`** – stejný software jako ZA Opava (platí tamní postup
+a pasti: `vysledekDetail` přímou adresou, `showZoomifySeparate`, tlačítko „Uložit obrázek“ nefunguje). Nástroje
+nepouští (robots.txt „Disallow: /“, ochrana proti robotům). Úvodní stránka má stejné upozornění na automatizované
+prohlížení jako ZA Opava – platí tamní odstavec **Podmínky archivu** (vysvětli uživateli, nech rozhodnout jeho;
+jinak čte uživatel sám a posílá snímky obrazovky). Pracuj v **Claude in Chrome** tempem člověka, jen snímky, které
+čteš, žádné dávky ani pomocníci; ověření v Chromu uživatele obvykle proběhne bez CAPTCHY (24. 11. 2026).
+Hledání: dlaždice **Matriky** (nebo „Sbírka matrik“ na úvodní stránce) a obec
+v poli „Místo / Lokalita“; ID snímků a entitu zjistíš jako u ZA Opava. Čti ze **snímku obrazovky přiblíženého
+zápisu**; celý snímek složí `cache.py z-chromu` (dlaždice z `digi-images.ahmp.cz` drží Chrome jen **1 hodinu** –
+skládej hned po projití stránky). Správnou farnost najdeš podle seznamů na https://www.ahmp.cz/index.html?mid=75
+(vnitřní Praha podle čísla popisného, vnější obvody podle obce); odkazy v nich vedou přímo na svazky.
+- Pražské matriky 1890–1940 většinou **nemají rejstříky** a farností je mnoho – bez přesného data a farnosti
+  (z úmrtí/sňatku nebo od rodiny) je hledání velmi drahé.
 
 ## SOA Litoměřice (severní Čechy) – `tools/soal_zoomify.py`
-Stejný software jako ZA Opava (Digitální badatelna) – platí i tamní pasti (`vysledekDetail` přímou adresou ukáže jiný
+Stejný software jako ZA Opava (Digitální badatelna; Opava ale nástroje už nepouští) – platí i tamní pasti (`vysledekDetail` přímou adresou ukáže jiný
 svazek, výstup JavaScriptu bez parametrů v Claude in Chrome).
 - `https://digi.soalitomerice.cz/digitalnibadatelna/` má na vstupu automatické ověření (asi 15 s „počítání“, projde
   samo) → knihu a cestu k obrázkům najdi v prohlížeči (Playwright nebo Claude in Chrome), snímky stahuj nástrojem.
@@ -184,8 +203,8 @@ svazek, výstup JavaScriptu bez parametrů v Claude in Chrome).
   Výsledky všechny najednou (počet na stránku přepni jedním výběrem, neprocházej stránky). Svazek otevři kliknutím
   ve výsledcích a **na detailu ověř signaturu**. Popis knihy uvádí „Územní rozsah“ (obce knihy) – čti ho první.
   Knihy bývají **rozdělené po obcích** s vlastním stránkováním a rejstříkem na konci.
-- **Adresy snímků** (záložka snímků, `actualDetailTab=attachmentsImg`) zjisti úryvkem – jen pro snímky, které čteš,
-  postupně s pauzou 3 s (`browser_evaluate`; na stránce téhož svazku, jinak showZoomify vrací prázdnou odpověď):
+- **Adresy snímků** (záložka snímků, `actualDetailTab=attachmentsImg`) zjisti úryvkem – jen pro snímky, které čteš
+  (nejvýš pár najednou), postupně s pauzou 3 s (`browser_evaluate`; na stránce téhož svazku, jinak showZoomify vrací prázdnou odpověď):
   ```js
   async () => {
     const snimky = [1, 50, 120];   // jen snímky, které opravdu čteš
@@ -211,16 +230,29 @@ svazek, výstup JavaScriptu bez parametrů v Claude in Chrome).
   `fetch`). Ohlásí ji stránka „!“ s **HTTP 200** (asi 116 bajtů) – kontroluj obsah, ne stavový kód. Dotazy jen postupně
   (žádné `Promise.all`), pauza aspoň 3 s, vždy jen jedna smyčka; po blokaci 35 minut nic (další pokusy ji prodlužují).
   Pomocníkům to napiš do zadání.
-## ZA Opava (severní Morava, Slezsko, Olomoucko, Litovelsko) – `tools/soal_zoomify.py`
+## ZA Opava (severní Morava, Slezsko, Olomoucko, Litovelsko) – jen v prohlížeči, Claude in Chrome
 - Pozor na hranici: obce na Litovelsku a Olomoucku patří pod **ZA Opava**, ne pod MZA Brno. Těšínsko viz další oddíl.
 - **Bez prohlížeče to nejde.** Badatelna `https://digi.archives.cz/da/` (stará adresa matriky.archives.cz jen přesměruje)
-  má ochranu proti robotům – curl ani WebFetch se nedostanou ani na hledání. Potřebuješ připojený prohlížeč (Claude in
-  Chrome – uživatel ho připojí příkazem `/chrome`; v OMP `browser` přes eval s `headed: true`, jinak je okno skryté –
-  nebo Playwright); jinak ať knihu najde a snímky uloží uživatel.
-  **Vestavěný prohlížeč aplikace Claude** (desktop, Code) archiv odmítne hned („Anomaly detected“) – nepoužívej ho.
-  Úvodní ověření projde samo, ale jen v kartě v popředí. Okno nastav aspoň na 1400×900, v užším se nezobrazí
-  filtry ani snímek. **CAPTCHA přijde typicky už u prvního hledání**, pak zhruba po hodině a v nové relaci
-  prohlížeče vždy znovu: **vyřeší ji uživatel** v okně prohlížeče, ty nikdy.
+  má ochranu proti robotům (Radware) a nepouští nástroje ani k obrázkům (robots.txt „Disallow: /“, images.archives.cz
+  vrací skriptům 403/404) – `soal_zoomify.py`, curl ani WebFetch, brzda je zastaví. Pracuj jako člověk, jeden
+  snímek po druhém, jen snímky, které čteš.
+  **Podmínky archivu:** úvodní stránka badatelny uvádí, že aplikace není určena k automatizovanému prohlížení
+  a vytěžování dat softwarovými nástroji. Správce skillu to vykládá tak, že jde o hromadné a automatické
+  procházení a stahování (skripty, roboti, dávky), ne o čtení jednotlivých snímků, které uživatel vede a jeho
+  asistent v jeho vlastním prohlížeči otevírá na jeho pokyn a jeho tempem. Je to výklad, ne svolení archivu:
+  řekni ho uživateli i se zněním oznámení a nech rozhodnout jeho. Když nesouhlasí on, nebo to nechceš dělat ty,
+  použij jinou cestu (FamilySearch, nebo čte uživatel sám – viz níže); nikdy neskonči bez ní.
+  **Prohlížeč: Claude in Chrome** (uživatel ho připojí příkazem `/chrome`) – v uživatelově Chromu ověření obvykle
+  proběhne bez CAPTCHY (24. 11. 2026). V OMP jen přes propojení s uživatelovým Chromem (relay), ne vlastním prohlížečem OMP – ten je
+  automatizovaný stejně jako Playwright. **Playwright ne:** od listopadu 2026 ho Radware pozná a po CAPTCHA se
+  ověření („Verifying your browser…“) točí donekonečna. **Vestavěný prohlížeč aplikace Claude** archiv odmítne hned
+  („Anomaly detected“).
+  Ověření projde jen v kartě v popředí. Okno aspoň 1400×900, v užším se nezobrazí filtry ani snímek. **CAPTCHU**
+  (když přijde, pak zhruba po hodině) **vyřeší uživatel** v okně prohlížeče, ty nikdy.
+- **Bez asistovaného prohlížení** (uživatel nechce, Claude in Chrome nemá, nebo to odmítneš): matriky ZA Opava
+  jsou i na FamilySearch (níže „Totéž na FamilySearch“), nebo čte uživatel sám – řekni mu svazek (signaturu)
+  a číslo snímku, on snímek otevře, přiblíží zápis a pošle snímek obrazovky; ty z něj čteš a zapisuješ jako jindy
+  (`vyrez.py` ze snímku obrazovky).
 - Hledej obec a vyfiltruj Matriky (ikona, potom znovu lupa). Hledání vrací i civilní matriky (u obce stovky svazků) –
   filtr „Datum od – do“ (podle začátku svazku, např. 1680–1873) nechá jen církevní. Knihy bývají řazené po obcích
   a na konci mají rejstřík. Vedle farních knih bývají i **druhopisy** („T“ v signatuře, viz `matriky.md`).
@@ -238,16 +270,57 @@ svazek, výstup JavaScriptu bez parametrů v Claude in Chrome).
   `select.getScanSelect option` (tvar „N%20uuid“). Snímek pak otevřeš kdykoli bez hledání (jediná přímá adresa,
   která na relaci nezávisí):
   `/da/showZoomifySeparate?imageNumberSeparate=N&myEntityUuid=<entita>&myImageUuid=<uuid>`.
-- Adresa obrázku: `fetch('/da/showZoomify/<id svazku z URL>/<část option.value za „%20“>')` vrátí HTML s cestou
-  `…/images/<složka>/<uuid>.jpg`. Cesta se u svazků liší (`…/CZ-217000010/NAD-165/dao/images/…`, `…/zao/matriky/dao/images/…`)
-  a přípona bývá i `.JPG` – nástroji dej vždy **celou adresu z HTML**:
-  `python3 -I tools/soal_zoomify.py "<adresa>" 2 pracovni/x.jpg` (2 = čtvrtinové rozlišení na orientaci podle záhlaví
-  stránek, 0 = plné jen u nalezeného zápisu). Obrázkový server images.archives.cz neomezuje a cookies nepotřebuje.
-- **POZOR na blokování** (jen stránky aplikace, obrázky ne): rychlé dotazy → CAPTCHA, „operace vyhodnoceny jako
-  nestandardní“ nebo „Access blocked“ na 30 minut; po desítkách dotazů za den vrací showZoomify „Server Exception“
-  (denní limit – pokračuj až další den). Pauza 3–6 s mezi stránkami, dávky do ~80 stránek, žádné rychlé `fetch` hned
-  po hledání a stránky výsledků neprocházej za sebou. Delší smyčku pusť v prohlížeči na pozadí, výsledky ukládej do
-  `window` nebo `localStorage` a vyzvedávej po částech (nástroj pro JavaScript má limit asi 45 s). Pomocníkům to napiš do zadání.
+- **Čtení: snímek obrazovky přiblíženého zápisu** (výchozí, funguje na všech systémech). Na stránce
+  `showZoomifySeparate` přibliž zápis `Z.Viewport.zoomAndPanToView(x, y, 0.5)` (souřadnice originálu, rozměr
+  v `Z.imageW`/`Z.imageH`; 1 = plné rozlišení na těžko čitelné místo), počkej 2–3 s, myš odsuň mimo zápis
+  (`hover` na okraj okna – jinak je kurzor v obraze) a ulož oblast zápisu: `computer` → `zoom` s `region` a
+  `save_to_disk` (ostřejší než celý snímek obrazovky). Soubor z výsledku zkopíruj do `pracovni/` a dál `vyrez.py`
+  jako u jiných archivů – přiblížený zápis je zároveň výřez pro web. Dlaždice nestahuj ani neskládej vlastním
+  `fetch`/`new Image()` – to jsou dotazy navíc, které prohlížeč sám nedělá.
+- **Celý snímek (volitelně, z mezipaměti prohlížeče)** – na rejstřík nebo když se ke stránce budeš vracet. Funkční
+  stažení badatelna nemá (tlačítko „Uložit obrázek“ u detailu svazku nic neudělá – chyba skriptu archivu
+  `sendInput is not defined`; obraz z plátna prohlížeče vzít nejde, dlaždice nemají CORS). Dlaždice, které si
+  prohlížeč snímků načte, ale Chrome drží 10 hodin na disku a `cache.py` z nich snímek složí bez jediného dotazu
+  na archiv (ověřeno 24. 11. 2026 na macOS; na Windows má Chrome jiný formát mezipaměti, zatím neověřeno):
+  1. Už ho máš? `python3 -I tools/cache.py najdi "<adresa showZoomifySeparate…>" --nahled pracovni/nahled.jpg`.
+  2. Otevři snímek **jeho adresou** `showZoomifySeparate…` a projdi stránku po pohledech (`javascript_tool`;
+     2,5 s na pohled jako člověk, při polovičním rozlišení 4–6 pohledů):
+     ```js
+     await new Promise(r => setTimeout(r, 3000));
+     const z = 0.5;   // 1 = plné rozlišení (4× víc dlaždic), jen na těžko čitelné místo
+     const [W, H, vw, vh] = [Z.imageW, Z.imageH, Z.viewerW, Z.viewerH];
+     const sx = vw / z, sy = vh / z, nx = Math.ceil(W / sx), ny = Math.ceil(H / sy);
+     const stred = (n, i, s, D) => n === 1 ? D / 2 : Math.min(D - s / 2, s / 2 + i * s);
+     for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) {
+       Z.Viewport.zoomAndPanToView(stred(nx, i, sx, W), stred(ny, j, sy, H), z);
+       await new Promise(r => setTimeout(r, 2500));
+     }
+     [Z.imagePath, W + 'x' + H, nx * ny + ' pohledů']
+     ```
+  3. `python3 -I tools/cache.py z-chromu "<adresa showZoomifySeparate…>" <Z.imagePath> <W>x<H> pracovni/x.jpg
+     --nahled pracovni/nahled.jpg` (s `--plne` pro plné rozlišení, když jsi v kroku 2 procházel se `z = 1`). Uloží
+     snímek do mezipaměti a do `pracovni/x.jpg`; dál `vyrez.py`. Hlásí-li chybějící dlaždice, zopakuj krok 2; když
+     nepřibudou (jiný prohlížeč, Windows), zůstaň u snímků obrazovky.
+  Jen snímky, které čteš, žádné dávky celých svazků ani pomocníci na tomto archivu.
+- **POZOR na blokování**: rychlé dotazy → CAPTCHA, „operace vyhodnoceny jako
+  nestandardní“ nebo „Access blocked“ na 30 minut. Pauza aspoň 5 s mezi stránkami, stránky výsledků neprocházej
+  za sebou a nepouštěj smyčky na pozadí ani dávky celých svazků. **Žádný `fetch`** (na `showZoomify`, permalinky
+  ani nic jiného) – ochrana proti robotům ho zachytí, u permalinků hned napoprvé; čísla a adresy snímků zjišťuj
+  jen běžnou navigací, po jednom.
+  - **Denní limit:** oficiální archiv neuvádí; ze zkušenosti asi **50 snímků** (a 200–300 stránek aplikace) za den.
+    Pak „Server Exception“ v okně snímku, „Přístup zablokován!“ i na úvodní stránce. Po prvním odmítnutí ten den
+    skonči (`python3 -I tools/slusne.py zastav digi.archives.cz "denní limit"`) – druhé odmítnutí blokaci prodlouží.
+    Hlášení uživatelů bývají i nižší (20–40 snímků za 2–3 dny) – počítej s rezervou.
+  - **„Server Exception“ hned po CAPTCHA** (přesměrování přes `/da/human/verify`) limit není: otevři znovu
+    `https://digi.archives.cz/da/` nebo adresu snímku; když to nepomůže, jednou zavři kartu a otevři novou – ověření
+    pak obvykle projde samo. Teprve potom ber chybu jako limit.
+- **Totéž na FamilySearch:** matriky ZA Opava (sbírka „Czech Republic, Church Books, 1552–1981“, signatury
+  `217000010-…`) a pozemkové a gruntovní knihy Opavy a Olomouce („Land Records, 1450–1889“) jsou na FamilySearch
+  v plném rozlišení a bez CAPTCHY – dobrá náhrada, když Opava blokuje nebo došel denní limit (postup v oddílu
+  FamilySearch níže). Svazek páruj přes „vol. NNNN“ v katalogu FS = inventární číslo ZA Opava (popisky let ve FS bývají
+  chybné). **Čísla snímků se liší knihu od knihy** (0, ±1, někde +7 až +8, jinde jiné pořadí listů): před čtením
+  z FS porovnej stránku s archivem (folio nebo pagina, rok, aspoň dvě jména), nikdy nepočítej s odhadnutým posunem.
+  Do `odkaz` dej snímek, ze kterého jsi opravdu četl.
 
 ## Těšínsko (Jablunkovsko, Třinecko, Karvinsko) – ZA Opava a prameny za hranicí
 - **Katolické matriky** české části jsou v ZA Opava (postup výše: prohlížeč, CAPTCHU řeší uživatel). Stejné knihy uvádí
@@ -272,9 +345,11 @@ svazek, výstup JavaScriptu bez parametrů v Claude in Chrome).
 - Portál `https://www.mza.cz/actapublica/`, bez přihlášení. **Od 2. 11. 2026 MZA blokuje stahovací skripty** (ověření
   Altcha, adresy dlaždic s tokenem) a výjimky nedělá. Skriptem jen hledání knih (níže, brzda 1 dotaz za 4 s, jiné
   adresy MZA brzda zastaví). Snímky jen v jejich prohlížeči: přiblížit zápis a uložit snímek obrazovky. Žádné
-  stahování, `fetch` ani skládání dlaždic, žádní pomocníci. Nejlépe Playwright (uloží
-  snímek do souboru); jinak ať uživatel pošle snímky obrazovky sám (celá dvoustrana na orientaci, pak přiblížený zápis
-  – kolečko myši, macOS Cmd+Shift+4, Windows Win+Shift+S) a ulož je do `pracovni/`.
+  stahování, `fetch` ani skládání dlaždic, žádní pomocníci. **Prohlížeč: Playwright** (uloží snímek do souboru).
+  **Vestavěný prohlížeč Claude desktop pro MZA nepoužívej** – podle hlášení uživatelů dostává na snímky 403 i po dni
+  pauzy, zatímco běžný prohlížeč projde. Bez Playwrightu ať uživatel otevře snímek ve svém prohlížeči a pošle snímky
+  obrazovky sám (celá dvoustrana na orientaci, pak přiblížený zápis – kolečko myši, macOS Cmd+Shift+4,
+  Windows Win+Shift+S) a ulož je do `pracovni/`.
 - Kniha: `python3 -I tools/slusne.py curl -s "https://www.mza.cz/actapublica/matrika/hledani?typ=obec&search_by_obec=<obec>&page=<n>"`
   → HTML tabulka (číslo knihy, původce, roky N/O/Z, počet snímků, odkaz `matrika/detail/<id>`; číslo knihy ≠ id).
   Výsledky po 20 – projdi i další stránky, než řekneš, že tam obec není. U velkých far jsou samostatné svazky rejstříků (N/O/Z) – začni jimi. Fary založené
@@ -302,8 +377,13 @@ svazek, výstup JavaScriptu bez parametrů v Claude in Chrome).
   ```
 - Nezobrazuj celou stránku v plném rozlišení (velké okno) – stovky dlaždic naráz a MZA vrací 503. Tempo 5–10 s mezi
   stránkami (SKILL.md, Šetrně k archivům), jen stránky, které opravdu čteš. Když ověření nepustí nebo MZA hlásí chybu, skonči a řekni to uživateli.
+- **Blokace snímků (403):** MZA po zhruba 45–60 snímcích za den (počítá se každé přiblížení – stahuje nové dlaždice)
+  přestane vydávat obraz: stránka i ověření projdou, ale snímek zůstane bílý a dlaždice vrací 403. **Není to pomalé
+  načítání – okamžitě přestaň**, nezkoušej znovu a řekni to uživateli. Blokace trvala i druhý den; další den zkus nejvýš
+  jeden snímek.
+- Dlaždice vracející **410** není blokace – vypršel token v adrese; stačí znovu otevřít stejnou adresu snímku (`?image=…jp2`).
 - Trvalý odkaz = adresa v prohlížeči `…/matrika/detail/<id>?image=<soubor>.jp2` (soubor končí číslem snímku × 10:
-  snímek 16 → `…-00160.jp2`). Svazek do `svazky.json` ručně (Ostatní portály, krok 4).
+  snímek 16 → `…-00160.jp2`). Svazek do `svazky.json` přes `zapis.py` (Ostatní portály, krok 4).
 - Doména actapublica.eu MZA nepatří (MZA to potvrdila) – nepoužívej ji, jen www.mza.cz/actapublica. Když MZA nejde
   načíst ani v prohlížeči, ať uživatel zkusí vypnout VPN nebo jinou síť.
 - **Sčítací operáty (1857–1921) nejsou v Acta Publica**, ale v samostatném portálu
@@ -364,7 +444,7 @@ svazek, výstup JavaScriptu bez parametrů v Claude in Chrome).
      `[...document.querySelectorAll('tr')].map(r => [...r.cells].map(c => c.innerText.trim()).join(' | '))`
      → Poznámka (druhy a roky) | Film | **DGS**. Název záznamu přeceňuje: „Cirkevná matrika, 1762–1927“ má křty,
      sňatky i úmrtí jen do **1895** (do 1927 jen biřmování). Po ~1895 vedl stát civilní matriky – mladší zápisy jsou
-     ve státním archivu nebo na matričním úřadě (na Slovensku 100 let i u úmrtí), ne online.
+     ve státním archivu nebo na matričním úřadě (na Slovensku státní matriky 100 let od posledního zápisu; církevní knihy v archivu po 90 letech od zápisu), ne online.
   3. **Index je neúplný** (hlavně křty) a jména zkomolená, u dvou křestních jmen bývá jen jedno; `q.anyPlace`
      výsledky nefiltruje, jen řadí. Hledej přes rodiče a bez křestního jména, jinak listuj snímky filmu (DGS výše;
      nejdřív rejstřík „Zoznam krstov A–Z“, bývá na začátku knihy).
@@ -471,8 +551,9 @@ Nástroje pro ně hotové nejsou. Postupuj takto a výsledek zapiš do `STAV.md`
    provozu, odkud se načítají dlaždice/obrázky (IIIF, DeepZoom, Zoomify), a stáhni celý obrázek touto cestou – jednotlivě,
    jen snímky, které čteš, a jen když to archiv nezakazuje (`<portál>/robots.txt`, podmínky užití). Krajní možnost: požádej uživatele, ať snímek uloží a dá do `pracovni/`.
 3. **Trvalý odkaz** na snímek (tlačítko „trvalý odkaz“/permalink, jinak URL svazku + číslo snímku) dej do `odkaz` v zápisu.
-4. Svazek zapiš do `data/svazky.json` ručně: `"klic": {"archiv": "SOA Třeboň", "portal": "digi.ceskearchivy.cz",
-   "svazek": "N Volary 1784–1820, sign. …", "popis": "obce…", "url": "<odkaz na svazek>"}`.
+4. Svazek zapiš přes nástroj: objekt `{"archiv": "SOA Třeboň", "portal": "digi.ceskearchivy.cz",
+   "svazek": "N Volary 1784–1820, sign. …", "popis": "obce…", "url": "<odkaz na svazek>"}` napiš do `pracovni/svazek.json`
+   a spusť `python3 -I tools/zapis.py svazky <klíč> pracovni/svazek.json` (ručně ani skriptem `svazky.json` neupravuj).
 5. Dál stejně jako u ARON: `vyrez.py`, `ramecek.py`, přepis, osoby, deník.
 6. Když se postup osvědčí, napiš pro portál vlastní malý nástroj podle `portafontium.py` (bez prohlížeče, jen když to archiv nezakazuje)
    a postup zapiš do `STAV.md`. Poznatek zapiš i do `poznamky_pro_skill.md` (pro správce skillu).
@@ -482,8 +563,11 @@ Nástroje pro ně hotové nejsou. Postupuj takto a výsledek zapiš do `STAV.md`
   (nacr.cz, hledej „Soupis poddaných podle víry“ + kraj). Fulltext v PDF, příjmení často bez diakritiky / s jinou ortografií
   (Šaršoun → „Šaroun“, dlouhé ſ jako f). Ves je v rámci panství; poznamenej si stránku edice.
 - **Berní rula 1654** – jen hospodáři s půdou; edice a rejstříky v knihovnách (Kramerius/DNNT).
-- **Gruntovní (pozemkové) knihy** – převody domů z otce na syna; online jen část (SOA Plzeň téměř vše, SOA Praha část,
-  ostatní spíš badatelna). Fond „Velkostatek <panství>“.
+- **Gruntovní (pozemkové) knihy** – převody domů z otce na syna; online jen část: SOA Plzeň téměř vše, SOA Praha část,
+  **SOA Třeboň** pozemkové knihy velkostatků (jen v prohlížeči: stránka obce → „Pozemkové knihy“; kniha je vidět jen
+  u obce, ke které je přiřazená – hledej i u sídla panství), **ZA Opava** urbáře a pozemkové knihy v Digitální
+  badatelně (snímky na stejném serveru jako matriky). Část knih z Třeboně a Opavy je i na FamilySearch („Czech Republic,
+  Land Records, 1450–1889“). Ostatní archivy spíš badatelna. Fond „Velkostatek <panství>“.
 - **Mapy stabilního katastru (1824–43)** – kde stál dům s číslem popisným: ags.cuzk.gov.cz/archiv (Archiv ČÚZK; stará adresa archivnimapy.cuzk.cz už nefunguje).
   Na **císařských otiscích** chybí u části listů barvy a čísla domů. Lepší jsou **indikační skici**: mají čísla domů
   a u pozemků jméno majitele („N. 13“ = patří k domu čp. 13). Dům bez pozemků mimo ves = domkář bez polí.
@@ -491,8 +575,16 @@ Nástroje pro ně hotové nejsou. Postupuj takto a výsledek zapiš do `STAV.md`
   - **Postup (jen v prohlížeči, služby jsou za tokenem – ten si stránka bere sama, nevypisuj ho):** na ags.cuzk.gov.cz/archiv
     najdi katastrální území, klikni do mapy na obec → „Indikační skici“ (nebo „Císařské povinné otisky“) → ID rastru
     (např. `HRA235018400`). Skica pak jde otevřít přímo: `https://ags.cuzk.gov.cz/archiv/openmap.html?typ=skicic&idrastru=<ID>`
-    (list otisku `typ=cioc`); načítá se asi 20 s. Osada často nemá vlastní katastr (Polom → k. ú. Lhota u Dobrušky) –
-    hledej podle sousední obce. Přibližuj kolečkem na bod, tažení myší mapu posouvá nevyzpytatelně.
+    (list otisku `typ=cioc`); načítá se asi 20 s. ID rastru dá i tlačítko `#btn_skicic` v okně obce. Osada často nemá
+    vlastní katastr (Polom → k. ú. Lhota u Dobrušky) – hledej podle sousední obce.
+  - **Ostrý výřez vsi (lepší než snímek obrazovky):** stránka si skicu kreslí voláním `…/archiv_nespojene_skici/ImageServer/exportImage`
+    (u otisku obdobná služba) s `bbox` v S-JTSK a `size` v pixelech. V prohlížeči (javascript) vezmi poslední takovou adresu
+    z `performance.getEntriesByType('resource')`, přepočítej `bbox` na výřez vsi (bod obrázku px, py → x = x0 + (x1−x0)·px/W,
+    y = y1 − (y1−y0)·py/H podle původního `bbox` a `size`), `size` nastav na šířku 2000–4000 px ve stejném poměru stran
+    (server pustí nejvýš 15000 × 4100) a obrázek stáhni přes `fetch` ve stránce. Token v adrese nech být a nevypisuj ho.
+    Uložení: `URL.createObjectURL(blob)` → odkaz `<a download="skica_obec.jpg">` a klik (prohlížeč ho uloží do stažených
+    souborů, Playwright do své výstupní složky), pak přesuň do `dokumenty/`. Kolem 1,4 m na pixel jsou čitelná jména
+    držitelů i čísla parcel. Jen výřezy vsí pro rodinu, žádné hromadné stahování listů.
   - **Morava:** odkaz vede do prohlížeče MZA (fond D 9, často dva listy: původní z 30. let a reambulace ze 70. let 19. stol.).
     MZA stahovací skripty zakazuje – jen přiblížit a snímek obrazovky (jako u matrik MZA). Listy Moravy nejsou georeferencované.
   - **Čtení:** v budově je **červeně číslo popisné** a **černě číslo stavební parcely** (pozemkové parcely mají čísla
@@ -500,7 +592,7 @@ Nástroje pro ně hotové nejsou. Postupuj takto a výsledek zapiš do `STAV.md`
     (archiv_spojene_pk) s adresními body RÚIAN ukáže, na které parcele stojí dnešní čp. „N° 35 Příjmení“ u pozemku
     = patří k domu čp. 35.
     Žlutá stavba dřevěná, růžová zděná. Popisky bývají vzhůru nohama (výřez otoč o 180°). U měst bývá intravilán prázdný.
-    Ulož jen snímkem obrazovky (stahování je placené) a na web dej výřez se zakroužkovaným domem.
+    Na web dej výřez se zakroužkovaným domem (u rodiny mívají staré mapy velký úspěch).
 - **Dnešní adresa domu** podle čísla popisného: RÚIAN (ČÚZK, vrstva AdresniMisto). Pozor, staré centrum mívá od 19. století
   stejná čp., ale předměstí a vesnice čísla přečíslovávaly. Hodí se na „procházku po stopách předků“.
   Stavbu podle obce a čísla popisného najde i nahlizenidokn.cuzk.gov.cz (ověření adresy z dokladu); vlastník je za

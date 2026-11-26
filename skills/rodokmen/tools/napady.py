@@ -12,6 +12,8 @@ Jsou to jen NÁMĚTY z dat – každý ověř v zápisu (data bývají nejistá)
 jako krátký příběh (viz reference/pribehy.md).
 """
 import datetime, os, re, sys
+if sys.argv[1:2] in (["-h"], ["--help"]):   # nápověda místo pádu
+    sys.exit(__doc__.strip())
 from collections import defaultdict
 for _s in (sys.stdout, sys.stderr):   # UTF-8 výstup i na Windows bez -X utf8 (cp1250 neumí třeba „→“)
     if hasattr(_s, "reconfigure"):
@@ -26,16 +28,19 @@ EPIDEMIE = {1771: "hladomor", 1772: "hladomor a tyfus", 1805: "tyfus", 1831: "ch
 
 def load():
     ns = {}
-    exec(open(os.path.join(ROOT, "data", "osoby.py"), encoding="utf-8").read(), ns)
+    exec(open(os.path.join(ROOT, "data", "osoby.py"), encoding="utf-8-sig").read(), ns)
     return ns["P"], ns.get("LINES", {}), ns.get("SAME", {})
 
 
+NEPRESNE = re.compile(r"^\S\s*(?:\S+\s+)?(?:před|po|mezi|asi|kolem|okolo|cca|nejpozději|nejdříve)\b", re.I)
+
+
 def event(p, sym):
-    """Všechna data události (* × †) z faktů osoby."""
+    """Všechna data události (* × †) z faktů osoby; „† před 6/1919“, „asi 1850“ apod. nejsou přesné datum."""
     out = []
     for f in p.get("f", []):
-        if f.strip().startswith(sym):
-            m = re.search(DATE, f)
+        if f.strip().startswith(sym) and not NEPRESNE.match(f.strip()):
+            m = re.search(DATE, re.sub(r"\([^)]*\)", "", f))   # ne datum zdroje v závorce („(zdroj, 17. 11. 2026)“)
             if m:
                 try:
                     out.append((datetime.date(int(m.group(3)), int(m.group(2)), int(m.group(1))), f))
@@ -46,7 +51,7 @@ def event(p, sym):
 
 def year_of(p, sym):
     for f in p.get("f", []):
-        if f.strip().startswith(sym):
+        if f.strip().startswith(sym) and not NEPRESNE.match(f.strip()):
             m = re.search(r"\d{4}", f)
             if m:
                 return int(m.group())

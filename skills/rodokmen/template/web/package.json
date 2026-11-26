@@ -3,12 +3,15 @@
   "private": true,
   "type": "module",
   "version": "0.1.0",
+  "engines": {
+    "node": ">=22.12.0"
+  },
   "scripts": {
     "data": "node scripts/data.mjs",
     "dev": "astro dev",
     "build": "astro build && pagefind --site dist",
     "preview": "astro preview",
-    "nahled": "npm run data && npm run build && astro preview",
+    "nahled": "npm run data && npm run build && astro preview --ignore-lock",
     "nasadit": "npm run data -- --nasazeni && npm run build && npx -y netlify-cli@latest deploy --prod --dir=dist && node scripts/overit.mjs",
     "nasadit-cloudflare": "npm run data -- --nasazeni && npm run build && node scripts/nasadit_cloudflare.mjs",
     "overit": "node scripts/overit.mjs",

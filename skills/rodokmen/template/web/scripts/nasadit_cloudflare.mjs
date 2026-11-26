@@ -1,37 +1,75 @@
 // Nahrání hotového webu (dist/) na Cloudflare – spouští ho `npm run nasadit-cloudflare` po exportu a buildu.
 // wrangler.jsonc a bránu cloudflare/worker.js vyrábí tools/export_web.py. Po nahrání spustí kontrolu
-// scripts/overit.mjs na adrese, kterou wrangler vypíše (https://rodokmen.<subdoména>.workers.dev).
+// scripts/overit.mjs na adrese, kterou wrangler vypíše (https://<web>.<subdoména>.workers.dev; web = cloudflare.web
+// z data/web.json, výchozí „rodokmen“).
+//
+// Dva projekty na jednom účtu: se stejným názvem webu by druhý přepsal první. Proto před prvním nasazením z této
+// složky (bez .wrangler/adresa.txt pro tento web) zjistíme, jestli web s tím názvem na účtu už není; když ano,
+// skončíme s radou. Vědomé přepsání (stejný projekt z jiného počítače): `node scripts/nasadit_cloudflare.mjs --prepsat`.
 //
 // Subdoména workers.dev: nový účet ji nemá. Wrangler spuštěný z Claude ji zaregistruje sám, název ale bere
 // z package.json (u všech „rodokmen-web“ – obsazené). Proto ho spouštíme ze složky .wrangler/subdomena,
 // kde package.json nese název z data/web.json (cloudflare.nazev); když je obsazený, zkusíme ho s číslem.
-import { spawn, spawnSync } from "node:child_process";
+import { spawnSync } from "node:child_process";
+import { npxSpawn, npxSync } from "./npx.mjs";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { join, resolve } from "node:path";
 
-const argv = process.argv.slice(2);
+const argv = process.argv.slice(2).filter((a) => a !== "--prepsat");
+const prepsat = process.argv.includes("--prepsat");
 const PLATNY = /^[a-z0-9](?:[a-z0-9-]{0,48}[a-z0-9])?$/;
 
-// --volno <název> […]: je subdoména <název>.workers.dev volná? Ptá se DNS Cloudflare (DoH), ne počítače –
+// Název webu (worker) z wrangler.jsonc, které vyrábí export (první řádek je komentář).
+function nazevWebu() {
+  try {
+    return JSON.parse(readFileSync("wrangler.jsonc", "utf8").replace(/^\s*\/\/.*$/gm, "")).name || "rodokmen";
+  } catch {
+    return "rodokmen";
+  }
+}
+
+function slug(t) {
+  return String(t || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 50).replace(/-+$/, "");
+}
+
+// data/web.json (i s BOM z Windows). Nečitelný soubor nasazení zastaví: s výchozím názvem by se u nového účtu
+// natrvalo založila jiná subdoména (přes API ji změnit nejde). Chybějící soubor = bez nastavení.
+function nactiWeb() {
+  try {
+    return JSON.parse(readFileSync("../data/web.json", "utf8").replace(/^\uFEFF/, ""));
+  } catch (e) {
+    if (e.code === "ENOENT") return {};
+    console.error(`CHYBA: data/web.json nejde přečíst (${e.message}) – oprav ho a spusť nasazení znovu.`);
+    process.exit(1);
+  }
+}
+
+function subdomenaZWebu() {
+  const web = nactiWeb();
+  return slug(web.cloudflare?.nazev) || slug(web.nazev) || "rodokmen";
+}
+
+// --volno [<název> …]: je subdoména <název>.workers.dev volná? Ptá se DNS Cloudflare (DoH), ne počítače –
 // ten by si „neexistuje“ zapamatoval a novou adresu pak až 30 minut neviděl. Obsazená subdoména má záznam
 // pro *.<název>.workers.dev; prázdná odpověď = nejspíš volná (jistotu dá až nasazení, to pak zkusí variantu s číslem).
 if (argv[0] === "--volno") {
   const doh = process.env.RODOKMEN_DOH || "https://cloudflare-dns.com/dns-query";
   let obsazeno = false;
-  for (const nazev of argv.slice(1)) {
+  for (const nazev of argv.length > 1 ? argv.slice(1) : [subdomenaZWebu()]) {   // bez názvu: ten z web.json
     if (!PLATNY.test(nazev)) {
       console.log(`${nazev}: nejde použít – jen malá písmena bez diakritiky, číslice a pomlčky (nejvýš 50 znaků)`);
       process.exit(2);
     }
-    const r = await fetch(`${doh}?name=rodokmen.${nazev}.workers.dev&type=A`, { headers: { accept: "application/dns-json" } });
+    const r = await fetch(`${doh}?name=${nazevWebu()}.${nazev}.workers.dev&type=A`, { headers: { accept: "application/dns-json" } });
     const ma = ((await r.json()).Answer || []).length > 0;
     obsazeno ||= ma;
-    console.log(`${nazev}: ${ma ? "obsazené" : "volné (nejspíš)"}  →  https://rodokmen.${nazev}.workers.dev`);
+    console.log(`${nazev}: ${ma ? "obsazené" : "volné (nejspíš)"}  →  https://${nazevWebu()}.${nazev}.workers.dev`);
   }
-  process.exit(obsazeno && argv.length === 2 ? 1 : 0);
+  process.exit(obsazeno && argv.length <= 2 ? 1 : 0);
 }
 if (argv.length) {
-  console.error(`CHYBA: neznámý přepínač ${argv[0]} (umím jen --volno <název>).`);
+  console.error(`CHYBA: neznámý přepínač ${argv[0]} (umím --volno <název> a --prepsat).`);
   process.exit(2);
 }
 
@@ -40,20 +78,9 @@ if (!existsSync("wrangler.jsonc") || !existsSync("cloudflare/worker.js")) {
   process.exit(1);
 }
 
-function slug(t) {
-  return String(t || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 50).replace(/-+$/, "");
-}
-
-let web = {};
-try {
-  web = JSON.parse(readFileSync("../data/web.json", "utf8"));
-} catch {}
-const zaklad = slug(web.cloudflare?.nazev) || slug(web.nazev) || "rodokmen";
+const zaklad = subdomenaZWebu();
 const navrhy = [zaklad, ...[0, 1, 2].map(() => `${zaklad}-${Math.floor(1000 + Math.random() * 9000)}`)];
 
-const win = process.platform === "win32";
-const config = resolve("wrangler.jsonc");
 
 function nasad(subdomena) {
   const slozka = resolve(".wrangler", "subdomena");
@@ -61,12 +88,31 @@ function nasad(subdomena) {
   writeFileSync(resolve(slozka, "package.json"), JSON.stringify({ name: subdomena, private: true }) + "\n");
   return new Promise((hotovo) => {
     let text = "";
-    const p = spawn("npx", ["-y", "wrangler@4", "deploy", "--config", config],
-      { cwd: slozka, shell: win, stdio: ["inherit", "pipe", "pipe"] });
+    // relativní cesta: bez mezer i v záložní cestě přes shell (projekt v „C:\Users\Jan Novák\…“)
+    const p = npxSpawn(["-y", "wrangler@4", "deploy", "--config", join("..", "..", "wrangler.jsonc")],
+      { cwd: slozka, stdio: ["inherit", "pipe", "pipe"] });
     p.stdout.on("data", (d) => { process.stdout.write(d); text += d; });
     p.stderr.on("data", (d) => { process.stderr.write(d); text += d; });
     p.on("close", (kod) => hotovo({ kod, text }));
   });
+}
+
+// Není na účtu už web se stejným názvem z jiného projektu?
+const webNazev = nazevWebu();
+let minule = "";
+try {
+  minule = readFileSync(resolve(".wrangler", "adresa.txt"), "utf8").trim();
+} catch {}
+if (!prepsat && !minule.startsWith(`https://${webNazev}.`)) {
+  const r = npxSync(["-y", "wrangler@4", "deployments", "list", "--name", webNazev, "--json"], { encoding: "utf8" });
+  if (r.status === 0) {
+    console.error(`\nNa účtu Cloudflare už web „${webNazev}“ je – nejspíš z jiného projektu rodokmenu. Nahráním bych ho přepsal.`,
+      `\nDej tomuto projektu jiný název webu: v data/web.json "cloudflare": {"web": "${webNazev}-…"} (malá písmena,`,
+      "pomlčky) a spusť nasazení znovu. Je-li to opravdu tentýž projekt (třeba z jiného počítače):",
+      "`node scripts/nasadit_cloudflare.mjs --prepsat`.");
+    process.exit(1);
+  }
+  // 10007 = takový web na účtu není; jiná chyba (nepřihlášen, nový účet) – nasazení ji ohlásí samo
 }
 
 let vystup;
