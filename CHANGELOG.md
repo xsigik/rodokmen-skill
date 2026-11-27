@@ -6,6 +6,17 @@ dá v repozitáři **Watch → Custom → Releases**.
 
 Projekt založený starší verzí Claude sám nabídne aktualizovat (pozná to podle souboru `VERZE`).
 
+## 0.11.3-xsigik – 27. 11. 2026
+
+**Nové** (převzato z otevřených PR původního skillu)
+- Web: stránka **Časová osa** – pruh života každého předka, barva podle rodu, odhadnutá léta vybledlá; vznikne jen,
+  když jsou v datech roky narození a úmrtí (sarsonj/rodokmen-skill#241).
+- Web: stránka **Jména** – která křestní jména se v rodokmenu dědí a v kterých rodech (sarsonj/rodokmen-skill#241).
+- Web: stránka **Domy předků** – čísla popisná, ke kterým se váží aspoň 3 předci, s mapou; každý dům má vlastní
+  stránku s lidmi, časovou osou a zápisy. Čísla se čtou z údajů osob („Holice čp. 41“), obec musí být na mapě webu
+  (sarsonj/rodokmen-skill#242). Projekt s vlastní stránkou `/dum/` ji zachová; menu v upraveném `Base.astro`
+  je při aktualizaci potřeba sloučit ručně.
+
 ## 0.11.2-xsigik – 26. 11. 2026
 
 Fork xsigik/rodokmen-skill postavený na původní verzi 0.11.1 (sekce níže). Oproti ní má navíc:
