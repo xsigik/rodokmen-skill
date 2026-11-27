@@ -6,6 +6,18 @@ dá v repozitáři **Watch → Custom → Releases**.
 
 Projekt založený starší verzí Claude sám nabídne aktualizovat (pozná to podle souboru `VERZE`).
 
+## 0.11.4-xsigik – 27. 11. 2026
+
+**Nové**
+- Rádci pro OMP (#29): projekt dostane `WATCHDOG.yml` se dvěma rádci – Hlídač směru (každé kolo: podmínky
+  uživatele, pravidla archivů, slepé uličky) a Závěrečný kontrolor (konec běhu: doložené údaje, doc × prob,
+  ztotožnění, deník, kontrola, soukromí; hlásí jen to, co mění výsledek). Modely z rolí `advisor_turn`
+  a `advisor_final`. Společné pokyny ve `WATCHDOG.md` patří skillu (aktualizace je přepíše), vlastní body
+  projektu do `.omp/WATCHDOG.md`. Existující `WATCHDOG.yml` aktualizace nemění.
+- `STAV.md`: oddíl „Platné podmínky uživatele“ – co si uživatel vyhradil nebo povolil; agent ho vede a rádci
+  podle něj posuzují pravidla.
+- `AGENTS.md`: po radě rádce, která mění výsledek, napíše agent celé výsledky znovu, ne jen opravu.
+
 ## 0.11.3-xsigik – 27. 11. 2026
 
 **Nové** (převzato z otevřených PR původního skillu)

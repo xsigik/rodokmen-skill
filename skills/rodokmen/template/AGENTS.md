@@ -6,3 +6,8 @@ Tohle je projekt rodokmenu vedený skillem **rodokmen**. Na začátku každé ko
 3. Pokračuj tam, kde se skončilo. Komunikuj česky, stručně a srozumitelně pro člověka bez zkušeností s genealogií a programováním.
 4. Síť na weby archivů jen přes brzdu `tools/slusne.py` (vlastní skripty, curl), i v zadání pomocníků – viz skill, „Šetrně k archivům“.
 5. Co by šlo ve skillu zlepšit (chyby nástrojů, nové archivy, nápady), zapisuj do `poznamky_pro_skill.md` – viz skill, sekce „Poznámky pro správce skillu“.
+
+## Rady rádců (OMP)
+Když po závěrečné zprávě přijde rada rádce a výsledek se mění, napiš celé výsledky znovu – kompletní opravenou verzi,
+ne „oprava k předchozímu“ ani jen změněné body. Uživatel čte jen poslední zprávu. Mění-li rada jen formulaci nebo
+nic podstatného, nevypisuj nic znovu.

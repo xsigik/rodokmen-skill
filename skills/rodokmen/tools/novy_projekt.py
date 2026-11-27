@@ -11,7 +11,8 @@ Použití: python3 <skill>/tools/novy_projekt.py <cílová složka> [--ukazka] [
 
 Vytvoří: data/ (prázdné kostry nebo ukázka), web/ (Astro web), tools/ (kopie nástrojů),
 vyrezy/, zdroje/, dokumenty/, pracovni/, AGENTS.md (pokyny pro agenta – Claude Code, Codex i OMP),
-.gitignore, .gitattributes (konce řádků LF i na Windows) a .claude/launch.json (náhled v Claude desktop).
+WATCHDOG.yml a WATCHDOG.md (rádci v OMP), .gitignore, .gitattributes (konce řádků LF i na Windows)
+a .claude/launch.json (náhled v Claude desktop).
 Do .claude/settings.json doplní zákaz přímého curl/wget (stahování z archivů jde přes brzdu tools/slusne.py);
 ostatní nastavení v souboru nechá beze změny.
 Existující data nepřepisuje.
@@ -26,7 +27,9 @@ Soubor, který šablona už nemá, nemaže: hlásí ho, dokud ho nesmažete ruč
 junction) mimo projekt a na místě záloh, složku místo souboru a cesty lišící se jen velikostí písmen ohlásí a přeskočí.
 Projekt bez .skill_sablona/ (ze starší verze) přepíše a původní verze změněných souborů uloží do
 pracovni/zaloha_<datum>/puvodni/.
-Starý CLAUDE.md se přejmenuje na AGENTS.md (obsah zůstane).
+Starý CLAUDE.md se přejmenuje na AGENTS.md (obsah zůstane). WATCHDOG.yml (sestava rádců) zkopíruje jen do projektu,
+který ho nemá; WATCHDOG.md (pokyny rádcům) patří skillu a aktualizace ho přepíše – vlastní body patří do
+.omp/WATCHDOG.md.
 """
 import hashlib, json, os, re, shutil, subprocess, sys, tempfile, time
 for _s in (sys.stdout, sys.stderr):   # UTF-8 výstup i na Windows bez -X utf8 (cp1250 neumí třeba „→“)
@@ -436,10 +439,15 @@ def main():
     if os.path.isfile(old) and not os.path.islink(old) and not os.path.lexists(agents):
         os.replace(old, agents)   # projekt ze starší verze: pokyny zůstanou, jen pod univerzálním názvem
         print("CLAUDE.md přejmenován na AGENTS.md.")
-    for name in ("AGENTS.md", ".gitignore", ".gitattributes", "poznamky_pro_skill.md", os.path.join(".claude", "launch.json")):
-        out = os.path.join(dst, name)
-        if not os.path.lexists(out) and not mimo(dst, out) and not kolize(dst, out):   # ne přes odkaz mimo projekt
-            copy(os.path.join(SKILL, "template", name), out)
+    for name in ("AGENTS.md", "WATCHDOG.yml", ".gitignore", ".gitattributes", "poznamky_pro_skill.md",
+                 os.path.join(".claude", "launch.json")):
+        out, src = os.path.join(dst, name), os.path.join(SKILL, "template", name)
+        if (os.path.exists(src) and not os.path.lexists(out) and not mimo(dst, out)
+                and not kolize(dst, out)):   # ne přes odkaz mimo projekt
+            copy(src, out)
+    out, src = os.path.join(dst, "WATCHDOG.md"), os.path.join(SKILL, "template", "WATCHDOG.md")
+    if os.path.exists(src) and not mimo(dst, out) and not kolize(dst, out):   # patří skillu – vždy nová verze
+        zapis(out, cti(src))   # vlastní body projektu: .omp/WATCHDOG.md
     nastaveni(dst, True if "--hlidac" in sys.argv else False if "--bez-hlidace" in sys.argv else None)
     if not kolize(dst, os.path.join(dst, ".skill_verze")):   # SKILL.md podle něj nabídne aktualizaci; odkaz nahradí
         zapis(os.path.join(dst, ".skill_verze"), cti(os.path.join(SKILL, "VERZE")))

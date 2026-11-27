@@ -7,6 +7,11 @@ pak konec `research_log.md` a sekci „Rozpracováno“.
 - Výchozí osoba: (doplnit – jméno, rok a místo narození)
 - Kdo s Claudem pracuje a jak chce komunikovat: (doplnit)
 
+## Platné podmínky uživatele
+Co si uživatel vyhradil nebo povolil a ještě platí (pořadí kroků, co přečte sám, co se nesmí zveřejnit, výjimky
+z pravidel archivu). Při novém pokynu hned doplň, po splnění smaž. Mají přednost před obecnými pravidly skillu.
+- (zatím nic)
+
 ## Kde co je
 | Soubor | Obsah |
 |---|---|
